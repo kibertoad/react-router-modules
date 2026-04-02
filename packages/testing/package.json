@@ -27,8 +27,8 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@react-router-modules/core": "workspace:*",
-    "@react-router-modules/runtime": "workspace:*"
+    "@react-router-modules/core": "^1.0.0",
+    "@react-router-modules/runtime": "^1.0.0"
   },
   "devDependencies": {
     "@testing-library/react": "^16.0.0",
