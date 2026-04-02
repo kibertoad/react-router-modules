@@ -1,4 +1,5 @@
 import { RouterProvider } from "react-router";
+import type { DataRouter } from "react-router";
 import type { StoreApi } from "zustand";
 import type { ReactiveService } from "@react-router-modules/core";
 import { SharedDependenciesContext } from "@react-router-modules/core";
@@ -8,7 +9,7 @@ import { ModulesContext } from "./modules-context.js";
 import type { NavigationManifest, ModuleEntry } from "./types.js";
 
 interface AppProps {
-  router: any;
+  router: DataRouter;
   stores: Record<string, StoreApi<unknown>>;
   services: Record<string, unknown>;
   reactiveServices: Record<string, ReactiveService<unknown>>;

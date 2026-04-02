@@ -161,8 +161,10 @@ function createAuthenticatedLayoutRoute(
 }
 
 function createLazyModuleRoute(_lazyMod: LazyModuleDescriptor): RouteObject {
-  // TODO: Implement lazy module loading properly
-  // For now, create a placeholder route
+  // TODO: Implement lazy module loading.
+  // React Router's static route model requires all routes at creation time,
+  // so dynamically injecting child routes from a lazy descriptor needs a
+  // descendant <Routes> or a two-phase resolve pattern.
   return {
     path: _lazyMod.basePath.replace(/^\//, ""),
     Component: () => null,
