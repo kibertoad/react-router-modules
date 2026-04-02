@@ -1,4 +1,4 @@
-import { Outlet } from "react-router";
+import { Outlet, useRoutes } from "react-router";
 import type { RouteObject } from "react-router";
 import type { ReactiveModuleDescriptor, LazyModuleDescriptor } from "@react-router-modules/core";
 
@@ -80,6 +80,11 @@ export function buildRouteTree(
     for (const mod of modules) {
       if (!mod.createRoutes) continue;
       const routes = mod.createRoutes();
+      if (!routes) {
+        throw new Error(
+          `[@react-router-modules/runtime] Module "${mod.id}" createRoutes() returned a falsy value.`,
+        );
+      }
       protectedChildren.push(...(Array.isArray(routes) ? routes : [routes]));
     }
 
@@ -122,6 +127,11 @@ export function buildRouteTree(
   for (const mod of modules) {
     if (!mod.createRoutes) continue;
     const routes = mod.createRoutes();
+    if (!routes) {
+      throw new Error(
+        `[@react-router-modules/runtime] Module "${mod.id}" createRoutes() returned a falsy value.`,
+      );
+    }
     protectedChildren.push(...(Array.isArray(routes) ? routes : [routes]));
   }
 
@@ -136,6 +146,14 @@ export function buildRouteTree(
     );
   } else {
     rootChildren.push(...protectedChildren);
+  }
+
+  // Not-found catch-all
+  if (options?.notFoundComponent) {
+    rootChildren.push({
+      path: "*",
+      Component: options.notFoundComponent,
+    });
   }
 
   const rootRoute: RouteObject = {
@@ -160,11 +178,33 @@ function createAuthenticatedLayoutRoute(
   };
 }
 
-function createLazyModuleRoute(_lazyMod: LazyModuleDescriptor): RouteObject {
-  // TODO: Implement lazy module loading properly
-  // For now, create a placeholder route
+/**
+ * Creates a catch-all route for a lazily-loaded module.
+ * On first navigation, the module descriptor is loaded and its routes
+ * are rendered as descendant routes via useRoutes().
+ */
+function createLazyModuleRoute(lazyMod: LazyModuleDescriptor): RouteObject {
+  // Capture the loaded routes so they're resolved only once
+  let cachedRoutes: RouteObject[] | null = null;
+
   return {
-    path: _lazyMod.basePath.replace(/^\//, ""),
-    Component: () => null,
+    path: lazyMod.basePath.replace(/^\//, "") + "/*",
+    lazy: async () => {
+      if (!cachedRoutes) {
+        const { default: descriptor } = await lazyMod.load();
+        if (descriptor.createRoutes) {
+          const routes = descriptor.createRoutes();
+          cachedRoutes = Array.isArray(routes) ? routes : [routes];
+        } else {
+          cachedRoutes = [];
+        }
+      }
+      const routes = cachedRoutes;
+      return {
+        Component: function LazyModule() {
+          return useRoutes(routes);
+        },
+      };
+    },
   };
 }
