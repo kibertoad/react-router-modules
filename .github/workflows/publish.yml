@@ -82,7 +82,7 @@ jobs:
           for key in "${!PKG_NAMES[@]}"; do
             if echo "$CHANGED" | grep -q "\"$key\""; then
               NAME="${PKG_NAMES[$key]}"
-              NPM_NAME="@tanstack-react-modules/${NAME}"
+              NPM_NAME="@react-router-modules/${NAME}"
 
               if [ "$FIRST" = true ]; then
                 FIRST=false

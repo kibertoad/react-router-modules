@@ -1,4 +1,4 @@
-import { createSharedHooks } from "@tanstack-react-modules/core";
+import { createSharedHooks } from "@react-router-modules/core";
 import type { LoginCredentials, User } from "./types.js";
 import type { Wretch } from "wretch";
 
@@ -43,13 +43,6 @@ export interface AppZones {
   headerActions?: ComponentType;
   /** Component rendered in a contextual detail panel alongside the main content */
   detailPanel?: ComponentType;
-}
-
-// Type-safe staticData: augment TanStack Router so createRoute({ staticData })
-// is checked against AppZones. Typos and wrong component types become compile errors.
-// Place this in app-shared (or a global .d.ts in the shell) so all modules get it.
-declare module "@tanstack/router-core" {
-  interface StaticDataRouteOption extends AppZones {}
 }
 
 // ---- Slots ----

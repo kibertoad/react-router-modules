@@ -1,24 +1,32 @@
-# @tanstack-react-modules/core
+# @react-router-modules/core
 
 Core types and utilities for defining reactive modules. This is the package modules import - it provides `defineModule`, typed hooks (`useStore`, `useService`), scoped stores, and all shared type definitions.
 
 ## Installation
 
 ```bash
-npm install @tanstack-react-modules/core
+npm install @react-router-modules/core
 ```
 
 ## Usage
 
 ```typescript
-import { defineModule } from "@tanstack-react-modules/core";
+import { defineModule } from "@react-router-modules/core";
 
 export default defineModule<AppDependencies, AppSlots>({
   id: "billing",
   version: "0.1.0",
-  createRoutes: (parentRoute) => {
-    /* ... */
-  },
+  createRoutes: () => [
+    {
+      path: "billing",
+      children: [
+        {
+          index: true,
+          lazy: () => import("./pages/BillingDashboard.js").then((m) => ({ Component: m.default })),
+        },
+      ],
+    },
+  ],
   navigation: [{ label: "Billing", to: "/billing", group: "finance" }],
   slots: { commands: [{ id: "billing:export", label: "Export", onSelect: () => {} }] },
 });

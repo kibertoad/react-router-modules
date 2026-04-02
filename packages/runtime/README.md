@@ -1,17 +1,17 @@
-# @tanstack-react-modules/runtime
+# @react-router-modules/runtime
 
 Application assembly layer for the reactive framework. Takes modules and configuration, produces a running app with routing, slots, zones, navigation, and provider wiring.
 
 ## Installation
 
 ```bash
-npm install @tanstack-react-modules/runtime
+npm install @react-router-modules/runtime
 ```
 
 ## Usage
 
 ```typescript
-import { createRegistry } from "@tanstack-react-modules/runtime";
+import { createRegistry } from "@react-router-modules/runtime";
 import billingModule from "./modules/billing";
 
 const registry = createRegistry<AppDependencies, AppSlots>({

@@ -22,7 +22,7 @@ export function useModules(): readonly ModuleEntry[] {
   const modules = useContext(ModulesContext);
   if (!modules) {
     throw new Error(
-      "[@tanstack-react-modules/runtime] useModules must be used within a <ReactiveApp />.",
+      "[@react-router-modules/runtime] useModules must be used within a <ReactiveApp />.",
     );
   }
   return modules;

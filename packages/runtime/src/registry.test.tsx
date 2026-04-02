@@ -1,8 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { createRegistry } from "./registry.js";
 import { createStore } from "zustand/vanilla";
-import { createRoute } from "@tanstack/react-router";
-import type { AnyRoute } from "@tanstack/react-router";
+import type { RouteObject } from "react-router";
 
 interface TestAuth {
   user: string | null;
@@ -30,8 +29,7 @@ function testModuleWithRoutes(id: string, path: string) {
   return {
     id,
     version: "1.0.0",
-    createRoutes: (parent: AnyRoute) =>
-      createRoute({ getParentRoute: () => parent, path, component: () => <></> }),
+    createRoutes: (): RouteObject => ({ path, Component: () => <></> }),
     requires: ["auth"] as const,
   };
 }
@@ -53,7 +51,7 @@ describe("createRegistry", () => {
       slots: { commands: [] },
     });
 
-    registry.register(testModuleWithRoutes("billing", "/billing"));
+    registry.register(testModuleWithRoutes("billing", "billing"));
     registry.register(headlessModule("analytics"));
 
     const { App, slots } = registry.resolve({

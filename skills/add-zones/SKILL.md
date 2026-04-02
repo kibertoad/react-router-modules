@@ -22,7 +22,7 @@ Do NOT use zones for:
 
 ## Two zone contribution patterns
 
-1. **Route-based zones** — the route's `staticData` declares zone components. The deepest matched route wins. Read via `useZones()`.
+1. **Route-based zones** — the route's `handle` declares zone components. The deepest matched route wins. Read via `useZones()`.
 2. **Descriptor zones** — workspace-style modules declare zones on their `ReactiveModuleDescriptor`. The active tab's module zones override route zones. Read via `useActiveZones(moduleId)`.
 
 Most apps use route-based zones. Descriptor zones are for tabbed workspace layouts where the active module isn't determined by routing.
@@ -43,43 +43,42 @@ export interface AppZones {
 
 Every value must be `ComponentType | undefined` (optional — not all routes fill every zone).
 
-## Step 2: Augment TanStack Router's StaticDataRouteOption
+## Step 2: Augment React Router's route handle type
 
-This gives you compile-time type checking when setting `staticData` on routes:
+This gives you compile-time type checking when setting `handle` on routes:
 
 ```typescript
 // app-shared/src/index.ts (or a global .d.ts in the shell)
-declare module "@tanstack/router-core" {
-  interface StaticDataRouteOption extends AppZones {}
+declare module "react-router" {
+  interface HandleRouteOption extends AppZones {}
 }
 ```
 
-With this declaration, `createRoute({ staticData: { detailPanle: ... } })` produces a compile error (typo caught).
+With this declaration, `{ handle: { detailPanle: ... } }` produces a compile error (typo caught).
 
 ## Step 3: Contribute zones from module routes
 
 ```typescript
 // modules/users/src/index.ts (inside createRoutes callback)
-import { createRoute, lazyRouteComponent } from "@tanstack/react-router";
 import { UserDetailSidebar } from "./components/UserDetailSidebar.js";
 
-const userDetail = createRoute({
-  getParentRoute: () => usersRoot,
-  path: "$userId",
-  component: lazyRouteComponent(() => import("./pages/UserDetail.js")),
-  staticData: {
+// Route object with handle for zone contribution
+{
+  path: ":userId",
+  lazy: () => import("./pages/UserDetail.js").then(m => ({ Component: m.default })),
+  handle: {
     detailPanel: UserDetailSidebar, // ← this zone is active when this route matches
   },
-});
+}
 ```
 
 ## Step 4: Read zones in the shell layout
 
 ```typescript
 // shell/src/components/Layout.tsx
-import { useZones } from "@tanstack-react-modules/runtime";
+import { useZones } from "@react-router-modules/runtime";
 import type { AppZones } from "@example/app-shared";
-import { Outlet } from "@tanstack/react-router";
+import { Outlet } from "react-router";
 
 export function Layout() {
   const zones = useZones<AppZones>();
@@ -120,16 +119,17 @@ Zones are derived entirely from the currently matched route hierarchy — they d
 
 ```typescript
 // This layout route stays matched for all /users/* routes
-import { createRoute } from "@tanstack/react-router";
-
-const usersLayout = createRoute({
-  getParentRoute: () => rootRoute,
+// Route object — persists zones across all /users/* pages
+{
   id: "users-layout",
-  component: UsersLayout,
-  staticData: {
+  Component: UsersLayout,
+  handle: {
     headerActions: UsersHeaderActions, // persists across all /users/* pages
   },
-});
+  children: [
+    // /users/* child routes go here
+  ],
+}
 ```
 
 For workspace-style apps using `useActiveZones`, the same rules apply. When the active tab changes to a module that doesn't declare zones, those zone keys revert to whatever the route hierarchy provides (or `undefined` if no route sets them either).
@@ -139,9 +139,9 @@ For workspace-style apps using `useActiveZones`, the same rules apply. When the 
 `useZones()` walks all matched routes from root to leaf and returns a merged map. The **deepest match wins** for each zone key:
 
 ```
-Root layout     → staticData: { headerActions: GlobalActions }
-  /users        → staticData: {} (no zones)
-    /$userId    → staticData: { detailPanel: UserDetailSidebar }
+Root layout     → handle: { headerActions: GlobalActions }
+  /users        → handle: {} (no zones)
+    /:userId    → handle: { detailPanel: UserDetailSidebar }
 ```
 
 Result: `{ headerActions: GlobalActions, detailPanel: UserDetailSidebar }`
@@ -173,7 +173,7 @@ export default defineModule<AppDependencies, AppSlots>({
 
 ```typescript
 // shell/src/components/WorkspaceLayout.tsx
-import { useActiveZones } from "@tanstack-react-modules/runtime";
+import { useActiveZones } from "@react-router-modules/runtime";
 import type { AppZones } from "@example/app-shared";
 
 export function WorkspaceLayout({ activeModuleId }: { activeModuleId: string | null }) {
@@ -210,7 +210,7 @@ export interface UIState {
 
 ```typescript
 // shell/src/components/Layout.tsx
-import { useZones } from "@tanstack-react-modules/runtime";
+import { useZones } from "@react-router-modules/runtime";
 import { useStore } from "@example/app-shared";
 import type { AppZones } from "@example/app-shared";
 
@@ -260,18 +260,18 @@ function ToolbarActions() {
 }
 ```
 
-**Why not dynamically set zone values to `undefined`?** Zones are static declarations on routes and module descriptors — they describe what a route *can* contribute, not what's currently shown. Mixing visibility state into zone values would mean routes need runtime logic in `staticData`, which is meant to be static. Keep the two concerns separate:
+**Why not dynamically set zone values to `undefined`?** Zones are static declarations on routes and module descriptors — they describe what a route _can_ contribute, not what's currently shown. Mixing visibility state into zone values would mean routes need runtime logic in `handle`, which is meant to be static. Keep the two concerns separate:
 
-| Concern    | Mechanism                        | Changes when…                 |
-| ---------- | -------------------------------- | ----------------------------- |
-| Zone content | `staticData` / descriptor `zones` | Route or active tab changes |
-| Zone visibility | Zustand store / React state    | User clicks a button        |
+| Concern         | Mechanism                     | Changes when…               |
+| --------------- | ----------------------------- | --------------------------- |
+| Zone content    | `handle` / descriptor `zones` | Route or active tab changes |
+| Zone visibility | Zustand store / React state   | User clicks a button        |
 
 ## Rules
 
 - Zone values are React component types (`ComponentType`), not instances. The shell renders them: `<zones.detailPanel />`.
 - Every zone key should be optional (`ComponentType | undefined`) in AppZones. Not all routes fill all zones.
-- Augment `StaticDataRouteOption` in app-shared for compile-time safety on `staticData`.
+- Augment `HandleRouteOption` in app-shared for compile-time safety on `handle`.
 - Use `useZones()` for route-based apps. Use `useActiveZones(moduleId)` for workspace/tab-based apps.
 - The deepest matched route wins when multiple routes in the hierarchy set the same zone key.
 - Module descriptor zones (via `useActiveZones`) override route zones for the same key.

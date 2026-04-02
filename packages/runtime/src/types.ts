@@ -1,11 +1,10 @@
 import type { StoreApi } from "zustand";
-import type { Router } from "@tanstack/react-router";
 import type {
   NavigationItem,
   ReactiveService,
   SlotMap,
   SlotMapOf,
-} from "@tanstack-react-modules/core";
+} from "@react-router-modules/core";
 
 /**
  * Configuration for creating a registry.
@@ -76,8 +75,8 @@ export interface ModuleEntry {
 export interface ApplicationManifest<TSlots extends SlotMapOf<TSlots> = SlotMap> {
   /** The root React component with all providers wired */
   readonly App: React.ComponentType;
-  /** The TanStack Router instance */
-  readonly router: Router<any, any, any>;
+  /** The React Router instance — pass to <RouterProvider /> if needed */
+  readonly router: any;
   /** Auto-generated navigation manifest from all modules */
   readonly navigation: NavigationManifest;
   /** Collected slot contributions from all modules */

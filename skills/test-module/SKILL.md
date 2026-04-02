@@ -1,6 +1,6 @@
 ---
 name: test-module
-description: Writes tests for a Reactive module using @tanstack-react-modules/testing with renderModule(), resolveModule(), and createMockStore(). Use when adding or updating tests for module components, routes, or slot contributions.
+description: Writes tests for a Reactive module using @react-router-modules/testing with renderModule(), resolveModule(), and createMockStore(). Use when adding or updating tests for module components, routes, or slot contributions.
 metadata:
   author: reactive
   version: "1.1"
@@ -8,7 +8,7 @@ metadata:
 
 # Test a Reactive Module
 
-`@tanstack-react-modules/testing` provides utilities for testing modules in isolation:
+`@react-router-modules/testing` provides utilities for testing modules in isolation:
 
 - **`renderModule()`** — renders a route-based or component-only module with mocked shared dependencies. Uses `@testing-library/react` under the hood.
 - **`resolveModule()`** — resolves a headless module (no component, no routes) without rendering. Tests slot contributions and lifecycle hooks.
@@ -34,7 +34,7 @@ modules/<module-name>/
 
 ```typescript
 import { test, expect } from "vitest";
-import { renderModule, createMockStore } from "@tanstack-react-modules/testing";
+import { renderModule, createMockStore } from "@react-router-modules/testing";
 import moduleDescriptor from "../index.js";
 import type { AuthStore, ConfigStore } from "@example/app-shared";
 import wretch from "wretch";
@@ -91,7 +91,7 @@ For modules that declare `component` instead of `createRoutes` (workspace-style 
 
 ```typescript
 import { test, expect } from "vitest";
-import { renderModule, createMockStore } from "@tanstack-react-modules/testing";
+import { renderModule, createMockStore } from "@react-router-modules/testing";
 import settingsModule from "../index.js";
 import type { AuthStore } from "@example/app-shared";
 
@@ -120,7 +120,7 @@ For modules that have no component and no routes — they only contribute slots:
 
 ```typescript
 import { test, expect } from "vitest";
-import { resolveModule } from "@tanstack-react-modules/testing";
+import { resolveModule } from "@react-router-modules/testing";
 import externalSystemsModule from "../index.js";
 import type { AppDependencies, AppSlots } from "@example/app-shared";
 
@@ -172,7 +172,7 @@ test("renders with slot data from other modules", async () => {
 Creates a zustand store pre-populated with the given state:
 
 ```typescript
-import { createMockStore } from "@tanstack-react-modules/testing";
+import { createMockStore } from "@react-router-modules/testing";
 
 const store = createMockStore<AuthStore>({
   user: { id: "1", name: "Test", email: "a@b.com", role: "user" },
@@ -218,6 +218,6 @@ Returns `{ slots, entry, onRegisterCalled }`. No rendering — tests slot contri
 - Use `createMockStore` for zustand stores — plain objects won't work (the framework checks for `getState`/`setState`/`subscribe` methods).
 - Use plain objects or real instances for services.
 - The `route` must match one of the module's declared routes.
-- `renderModule` creates an isolated TanStack Router with memory history — no real navigation occurs.
+- `renderModule` creates an isolated React Router with memory history — no real navigation occurs.
 - Use `resolveModule` for headless modules that have neither `component` nor `createRoutes`.
 - Run tests with `pnpm test` or `vitest run` from the repo root.

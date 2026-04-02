@@ -1,8 +1,8 @@
-import { useParams } from "@tanstack/react-router";
+import { useParams } from "react-router";
 import { useStore } from "@example/app-shared";
 
 export function UserDetailPanel() {
-  const { userId } = useParams({ strict: false }) as { userId: string };
+  const { userId } = useParams() as { userId: string };
   const user = useStore("auth", (s) => s.user);
 
   return (

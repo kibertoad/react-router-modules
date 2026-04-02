@@ -1,12 +1,12 @@
 import { render } from "@testing-library/react";
 import type { RenderResult } from "@testing-library/react";
-import { createMemoryHistory, createRouter, createRootRoute } from "@tanstack/react-router";
-import { SharedDependenciesContext, separateDeps } from "@tanstack-react-modules/core";
-import type { ReactiveModuleDescriptor, SlotMap } from "@tanstack-react-modules/core";
-import { SlotsContext } from "@tanstack-react-modules/runtime";
-import { ModulesContext } from "@tanstack-react-modules/runtime";
-import type { ModuleEntry } from "@tanstack-react-modules/runtime";
-import { RouterProvider } from "@tanstack/react-router";
+import { createMemoryRouter, RouterProvider } from "react-router";
+import type { RouteObject } from "react-router";
+import { SharedDependenciesContext, separateDeps } from "@react-router-modules/core";
+import type { ReactiveModuleDescriptor, SlotMap } from "@react-router-modules/core";
+import { SlotsContext } from "@react-router-modules/runtime";
+import { ModulesContext } from "@react-router-modules/runtime";
+import type { ModuleEntry } from "@react-router-modules/runtime";
 import type { StoreApi } from "zustand";
 
 export interface RenderModuleOptions<TSharedDependencies extends Record<string, any>> {
@@ -77,21 +77,13 @@ export async function renderModule<TSharedDependencies extends Record<string, an
   const slots = options.slots ?? {};
 
   if (module.createRoutes) {
-    // Route-based module — build a router and render via RouterProvider
-    const rootRoute = createRootRoute({});
-    const moduleRoutes = module.createRoutes(rootRoute);
-    const routeTree = rootRoute.addChildren([moduleRoutes]);
+    // Route-based module — build routes and render via RouterProvider
+    const moduleRoutes = module.createRoutes();
+    const routes: RouteObject[] = Array.isArray(moduleRoutes) ? moduleRoutes : [moduleRoutes];
 
-    const memoryHistory = createMemoryHistory({
+    const router = createMemoryRouter(routes, {
       initialEntries: [options.route ?? "/"],
     });
-
-    const router = createRouter({
-      routeTree,
-      history: memoryHistory,
-    });
-
-    await router.load();
 
     return render(
       <SharedDependenciesContext value={{ stores, services, reactiveServices }}>
@@ -120,7 +112,7 @@ export async function renderModule<TSharedDependencies extends Record<string, an
   }
 
   throw new Error(
-    `[@tanstack-react-modules/testing] Module "${module.id}" has neither createRoutes nor component. ` +
+    `[@react-router-modules/testing] Module "${module.id}" has neither createRoutes nor component. ` +
       "renderModule requires at least one of these.",
   );
 }

@@ -20,7 +20,7 @@ function useSharedDependencies(): SharedDependenciesContextValue {
   const ctx = useContext(SharedDependenciesContext);
   if (!ctx) {
     throw new Error(
-      "[@tanstack-react-modules/core] useStore/useService/useReactiveService must be used within a <ReactiveApp />. " +
+      "[@react-router-modules/core] useStore/useService/useReactiveService must be used within a <ReactiveApp />. " +
         "Make sure your component is rendered inside the App returned by registry.resolve().",
     );
   }
@@ -49,7 +49,7 @@ function suggestHook(key: string, ctx: SharedDependenciesContextValue): string |
  *
  * @example
  * // In @myorg/app-shared:
- * import { createSharedHooks } from '@tanstack-react-modules/core'
+ * import { createSharedHooks } from '@react-router-modules/core'
  * import type { AppDependencies } from '@myorg/app-shared'
  *
  * export const { useStore, useService, useReactiveService, useOptional } = createSharedHooks<AppDependencies>()
@@ -75,10 +75,10 @@ export function createSharedHooks<TSharedDependencies extends Record<string, any
     if (!store) {
       const hint = suggestHook(key, ctx);
       if (hint) {
-        throw new Error(`[@tanstack-react-modules/core] "${key}" is not a store. ${hint}`);
+        throw new Error(`[@react-router-modules/core] "${key}" is not a store. ${hint}`);
       }
       throw new Error(
-        `[@tanstack-react-modules/core] "${key}" is not registered. ` +
+        `[@react-router-modules/core] "${key}" is not registered. ` +
           `Available dependencies: ${allKeys(ctx)}`,
       );
     }
@@ -97,10 +97,10 @@ export function createSharedHooks<TSharedDependencies extends Record<string, any
     if (!service) {
       const hint = suggestHook(key, ctx);
       if (hint) {
-        throw new Error(`[@tanstack-react-modules/core] "${key}" is not a service. ${hint}`);
+        throw new Error(`[@react-router-modules/core] "${key}" is not a service. ${hint}`);
       }
       throw new Error(
-        `[@tanstack-react-modules/core] "${key}" is not registered. ` +
+        `[@react-router-modules/core] "${key}" is not registered. ` +
           `Available dependencies: ${allKeys(ctx)}`,
       );
     }
@@ -132,12 +132,10 @@ export function createSharedHooks<TSharedDependencies extends Record<string, any
     if (!rs) {
       const hint = suggestHook(key, ctx);
       if (hint) {
-        throw new Error(
-          `[@tanstack-react-modules/core] "${key}" is not a reactive service. ${hint}`,
-        );
+        throw new Error(`[@react-router-modules/core] "${key}" is not a reactive service. ${hint}`);
       }
       throw new Error(
-        `[@tanstack-react-modules/core] "${key}" is not registered. ` +
+        `[@react-router-modules/core] "${key}" is not registered. ` +
           `Available dependencies: ${allKeys(ctx)}`,
       );
     }

@@ -1,11 +1,11 @@
 import { useService, getUserContract } from "@example/app-shared";
 import { sendByContract } from "@lokalise/frontend-http-client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useParams } from "@tanstack/react-router";
+import { useParams } from "react-router";
 import { userNotes } from "../stores/user-notes.js";
 
 export default function UserDetail() {
-  const { userId } = useParams({ strict: false }) as { userId: string };
+  const { userId } = useParams() as { userId: string };
   const httpClient = useService("httpClient");
   const queryClient = useQueryClient();
 

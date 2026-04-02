@@ -1,8 +1,8 @@
-# tanstack-react-modules
+# react-router-modules
 
 Plug-and-play modular framework for React. Build frontend features as independent npm packages, compose them into a running application via a typed module registry.
 
-**Stack:** React 19 (React Compiler) + TanStack Router + Vite 8 + Zustand
+**Stack:** React 19 (React Compiler) + React Router v7 + Vite 8 + Zustand
 
 ## Table of Contents
 
@@ -37,18 +37,18 @@ Plug-and-play modular framework for React. Build frontend features as independen
 
 ## Philosophy
 
-This framework does not reinvent routing, state management, or data fetching. React, TanStack Router, Zustand, and React Query are mature, battle-tested tools with excellent documentation, large communities, and proven track records. Replacing any of them with a custom abstraction would mean worse documentation, fewer answered Stack Overflow questions, and harder hiring.
+This framework does not reinvent routing, state management, or data fetching. React, React Router, Zustand, and React Query are mature, battle-tested tools with excellent documentation, large communities, and proven track records. Replacing any of them with a custom abstraction would mean worse documentation, fewer answered Stack Overflow questions, and harder hiring.
 
-Instead, tanstack-react-modules provides **lightweight glue** on top of the ecosystem you already know. The framework's job is to solve the handful of problems that become genuinely painful when multiple independent teams need to ship features into a single application - without touching the parts that existing tools already handle well.
+Instead, react-router-modules provides **lightweight glue** on top of the ecosystem you already know. The framework's job is to solve the handful of problems that become genuinely painful when multiple independent teams need to ship features into a single application - without touching the parts that existing tools already handle well.
 
 Concretely, the framework handles:
 
 - **Dependency injection across package boundaries.** Modules need access to shared state (auth, config) and services (HTTP clients) owned by the host app. The `TSharedDependencies` pattern provides compile-time-safe, typed access to these without global singletons or prop drilling through layers of components that don't care about them.
-- **Route composition.** Each module declares its own routes. The registry merges them into a single TanStack Router tree. No module needs to know about any other module's routes, and the shell doesn't need a growing import list every time a new feature ships.
+- **Route composition.** Each module declares its own routes. The registry merges them into a single React Router route tree. No module needs to know about any other module's routes, and the shell doesn't need a growing import list every time a new feature ships.
 - **UI extensibility primitives.** Navigation items, command palette entries, sidebar panels - these are places where every module needs to contribute a piece. Slots and zones provide structured extension points so the shell layout can stay generic while modules fill it with content.
 - **Validation at startup.** When a module declares `requires: ['auth', 'httpClient']`, the registry checks that these dependencies are actually provided before the app renders. Typos and missing wiring surface as explicit errors during development, not as undefined-is-not-a-function at runtime.
 
-Everything else - how you write components, how you fetch data, how you manage local state, how you style your UI - is just React. A developer who knows React, TanStack Router, and Zustand can be productive in a tanstack-react-modules codebase on day one, because the framework adds concepts only where vanilla React falls short for multi-team composition.
+Everything else - how you write components, how you fetch data, how you manage local state, how you style your UI - is just React. A developer who knows React, React Router, and Zustand can be productive in a react-router-modules codebase on day one, because the framework adds concepts only where vanilla React falls short for multi-team composition.
 
 ---
 
@@ -75,9 +75,9 @@ When multiple teams try to work within a single traditional React application, s
 
 **Onboarding and cognitive load scale with the whole codebase.** A new developer on the billing team needs to understand the full application structure just to find where their code lives. Conventions are inconsistent across team boundaries because there's no enforcement mechanism - only tribal knowledge and code review goodwill.
 
-tanstack-react-modules addresses these problems by giving each module a clear contract (`ReactiveModuleDescriptor`), enforcing dependency declarations at compile time, and composing independently developed packages into a running application at the registry level - without requiring teams to coordinate on anything beyond the shared dependency interface.
+react-router-modules addresses these problems by giving each module a clear contract (`ReactiveModuleDescriptor`), enforcing dependency declarations at compile time, and composing independently developed packages into a running application at the registry level - without requiring teams to coordinate on anything beyond the shared dependency interface.
 
-Note that the framework does **not** solve independent deployment. Modules are composed at build time - they ship in the same bundle as the shell. This is a deliberate trade-off: runtime module federation and micro-frontend loading add significant complexity (shared dependency versioning, runtime failures, CORS, independent CI pipelines) that most teams don't need. tanstack-react-modules optimizes for **development-time independence** - separate packages, isolated testing, clear contracts - while keeping a single, simple build and deploy pipeline.
+Note that the framework does **not** solve independent deployment. Modules are composed at build time - they ship in the same bundle as the shell. This is a deliberate trade-off: runtime module federation and micro-frontend loading add significant complexity (shared dependency versioning, runtime failures, CORS, independent CI pipelines) that most teams don't need. react-router-modules optimizes for **development-time independence** - separate packages, isolated testing, clear contracts - while keeping a single, simple build and deploy pipeline.
 
 ---
 
@@ -92,9 +92,9 @@ Note that the framework does **not** solve independent deployment. Modules are c
 │  - Provides root layout                                 │
 │                                                         │
 │  ┌────────────────────────────────────────────────────┐ │
-│  │  @tanstack-react-modules/runtime                   │ │
+│  │  @react-router-modules/runtime                   │ │
 │  │  - Validates dependencies                          │ │
-│  │  - Composes TanStack Router route tree             │ │
+│  │  - Composes React Router route tree             │ │
 │  │  - Builds navigation manifest                      │ │
 │  │  - Collects slot contributions                     │ │
 │  │  - Wires provider tree:                            │ │
@@ -127,16 +127,16 @@ Note that the framework does **not** solve independent deployment. Modules are c
 
 ### What maps to what on screen
 
-| Framework entity              | What the user sees                                                                                  |
-| ----------------------------- | --------------------------------------------------------------------------------------------------- |
-| **Shell**                     | The persistent chrome: top bar, sidebar, footer. Always visible.                                    |
+| Framework entity              | What the user sees                                                                                                                                                                                                                                                                                     |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Shell**                     | The persistent chrome: top bar, sidebar, footer. Always visible.                                                                                                                                                                                                                                       |
 | **Module**                    | A feature area. In route-based apps, a set of pages (`/billing/*`). In workspace apps, a unit of content the shell renders — typically in a tab, but could be a panel, drawer, or any shell-managed content area. The module's content can have its own internal navigation (sub-tabs, wizards, etc.). |
-| **Route** (`createRoutes`)    | A page within a module. URL changes, content area updates.                                          |
-| **Component** (on descriptor) | A module's UI rendered by the shell in a tab, panel, or modal — not tied to a URL.                  |
-| **Zone**                      | A named layout region (sidebar, header actions, detail panel) whose content changes per page or tab. |
-| **Slot**                      | A global collection rendered once (command palette entries, badge counts). All modules contribute.   |
-| **Navigation item**           | A link in the sidebar or mode rail.                                                                 |
-| **Shared dependency**         | Invisible. Services and stores modules consume (auth, HTTP client) — no direct UI.                  |
+| **Route** (`createRoutes`)    | A page within a module. URL changes, content area updates.                                                                                                                                                                                                                                             |
+| **Component** (on descriptor) | A module's UI rendered by the shell in a tab, panel, or modal — not tied to a URL.                                                                                                                                                                                                                     |
+| **Zone**                      | A named layout region (sidebar, header actions, detail panel) whose content changes per page or tab.                                                                                                                                                                                                   |
+| **Slot**                      | A global collection rendered once (command palette entries, badge counts). All modules contribute.                                                                                                                                                                                                     |
+| **Navigation item**           | A link in the sidebar or mode rail.                                                                                                                                                                                                                                                                    |
+| **Shared dependency**         | Invisible. Services and stores modules consume (auth, HTTP client) — no direct UI.                                                                                                                                                                                                                     |
 
 A single module can use routes, zones, slots, and navigation together. A billing module might own `/billing/*` routes, contribute a detail panel zone on its invoice page, add commands to the command palette via slots, and show a "Billing" link in the sidebar via navigation.
 
@@ -144,7 +144,7 @@ A single module can use routes, zones, slots, and navigation together. A billing
 
 - Modules are standard npm packages. They can live in the same monorepo or be published to a registry.
 - The **host app** defines what shared dependencies exist (auth, config, HTTP client). Modules consume them via typed hooks.
-- The framework does not reinvent routing, state management, or data fetching. It wires together TanStack Router, Zustand, React Query, and the Lokalise HTTP client.
+- The framework does not reinvent routing, state management, or data fetching. It wires together React Router, Zustand, React Query, and the Lokalise HTTP client.
 - **Zustand** owns client state (auth, UI, preferences). **React Query** owns server state (API data, caching, refetching).
 
 ---
@@ -161,7 +161,7 @@ A single module can use routes, zones, slots, and navigation together. A billing
 The CLI scaffolds a complete project with shell, app-shared, and a first module:
 
 ```bash
-npx @tanstack-react-modules/cli init my-app --scope @myorg --module dashboard
+npx @react-router-modules/cli init my-app --scope @myorg --module dashboard
 cd my-app
 pnpm install
 pnpm dev
@@ -234,7 +234,7 @@ app-shared/
 
 ```typescript
 // app-shared/src/index.ts
-import { createSharedHooks } from "@tanstack-react-modules/core";
+import { createSharedHooks } from "@react-router-modules/core";
 import type { Wretch } from "wretch";
 
 export interface AuthStore {
@@ -265,7 +265,7 @@ export const { useStore, useService, useReactiveService, useOptional } =
 **Rules:**
 
 - The app-shared package is the **only** package that both the shell and modules depend on. It is the boundary between them.
-- Modules import `useStore` and `useService` from this package - never from `@tanstack-react-modules/core` directly.
+- Modules import `useStore` and `useService` from this package - never from `@react-router-modules/core` directly.
 - Zustand store types go in `AppDependencies` for reactive state. Non-reactive services (HTTP client, loggers) also go in `AppDependencies`.
 - The shell must provide implementations for every key in `AppDependencies`. The registry validates this at `resolve()` time against each module's `requires` list.
 - Keep this package lightweight. It should contain only types, hooks, zod schemas, and domain types - no React components, no business logic.
@@ -274,7 +274,7 @@ export const { useStore, useService, useReactiveService, useOptional } =
 
 ## Creating a Module
 
-> **CLI shortcut:** `npx @tanstack-react-modules/cli create module billing` scaffolds the module, wires it into the shell's `main.tsx` and `package.json`, then run `pnpm install`.
+> **CLI shortcut:** `npx @react-router-modules/cli create module billing` scaffolds the module, wires it into the shell's `main.tsx` and `package.json`, then run `pnpm install`.
 
 A module is an npm package that exports a `ReactiveModuleDescriptor` via `defineModule()`.
 
@@ -296,40 +296,32 @@ modules/billing/
 
 ```typescript
 // modules/billing/src/index.ts
-import { defineModule } from "@tanstack-react-modules/core";
-import { createRoute, lazyRouteComponent } from "@tanstack/react-router";
+import { defineModule } from "@react-router-modules/core";
 import type { AppDependencies } from "@example/app-shared";
 
 export default defineModule<AppDependencies>({
   id: "billing",
   version: "0.1.0",
 
-  createRoutes: (parentRoute) => {
-    const billingRoot = createRoute({
-      getParentRoute: () => parentRoute,
+  createRoutes: () => [
+    {
       path: "billing",
-    });
-
-    const billingIndex = createRoute({
-      getParentRoute: () => billingRoot,
-      path: "/",
-      component: lazyRouteComponent(() => import("./pages/BillingDashboard.js")),
-    });
-
-    const invoiceList = createRoute({
-      getParentRoute: () => billingRoot,
-      path: "invoices",
-      component: lazyRouteComponent(() => import("./pages/InvoiceList.js")),
-    });
-
-    const invoiceDetail = createRoute({
-      getParentRoute: () => billingRoot,
-      path: "invoices/$invoiceId",
-      component: lazyRouteComponent(() => import("./pages/InvoiceDetail.js")),
-    });
-
-    return billingRoot.addChildren([billingIndex, invoiceList, invoiceDetail]);
-  },
+      children: [
+        {
+          index: true,
+          lazy: () => import("./pages/BillingDashboard.js").then((m) => ({ Component: m.default })),
+        },
+        {
+          path: "invoices",
+          lazy: () => import("./pages/InvoiceList.js").then((m) => ({ Component: m.default })),
+        },
+        {
+          path: "invoices/:invoiceId",
+          lazy: () => import("./pages/InvoiceDetail.js").then((m) => ({ Component: m.default })),
+        },
+      ],
+    },
+  ],
 
   navigation: [
     { label: "Billing", to: "/billing", icon: "credit-card", group: "finance", order: 10 },
@@ -346,7 +338,7 @@ export default defineModule<AppDependencies>({
 | -------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `id`           | Yes      | Unique string identifier. Must be unique across all registered modules.                                                                              |
 | `version`      | Yes      | SemVer version string.                                                                                                                               |
-| `createRoutes` | No       | Receives the root route as parent, returns a TanStack Router route subtree. Use `lazyRouteComponent()` for code splitting.                           |
+| `createRoutes` | No       | Returns an array of React Router `RouteObject` entries. Use `lazy` for code splitting.                                                               |
 | `component`    | No       | A React component the shell can render outside of routes - in a tab, modal, or panel. Use for workspace apps where the shell orchestrates rendering. |
 | `meta`         | No       | Catalog metadata for discovery UIs. Accepts a `TMeta` generic for type safety - see [Module Catalog](#module-catalog).                               |
 | `navigation`   | No       | Array of `NavigationItem` entries contributed to the shell's sidebar/nav.                                                                            |
@@ -361,7 +353,7 @@ export default defineModule<AppDependencies>({
 import { useStore, useService, listInvoicesContract } from '@example/app-shared'
 import { sendByContract } from '@lokalise/frontend-http-client'
 import { useQuery } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
+import { Link } from 'react-router'
 
 export default function InvoiceList() {
   // Reactive - re-renders when auth state changes
@@ -385,7 +377,7 @@ export default function InvoiceList() {
     <ul>
       {invoices?.map((inv) => (
         <li key={inv.id}>
-          <Link to="/billing/invoices/$invoiceId" params={{ invoiceId: inv.id }}>
+          <Link to={`/billing/invoices/${inv.id}`}>
             {inv.id} - ${inv.amount.toFixed(2)}
           </Link>
         </li>
@@ -405,13 +397,13 @@ export default function InvoiceList() {
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "dependencies": {
-    "@tanstack-react-modules/core": "^0.1.0",
+    "@react-router-modules/core": "^0.1.0",
     "@example/app-shared": "workspace:*",
     "@lokalise/frontend-http-client": "^7.0.0"
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.95.0",
-    "@tanstack/react-router": "^1.120.0",
+    "react-router": "^7.0.0",
     "react": "^19.0.0",
     "zustand": "^5.0.0"
   }
@@ -591,7 +583,7 @@ const httpClient = useService("httpClient");
 If a module declares `requires: ['auth', 'httpClient']` and the registry doesn't have `httpClient` in its stores or services, `resolve()` throws:
 
 ```
-[@tanstack-react-modules/runtime] Module "billing" requires dependencies not provided
+[@react-router-modules/runtime] Module "billing" requires dependencies not provided
 by the registry: httpClient. Available: auth, config
 ```
 
@@ -605,7 +597,7 @@ The shell is a Vite application that creates shared dependencies, registers modu
 
 ```typescript
 import { createRoot } from 'react-dom/client'
-import { createRegistry } from '@tanstack-react-modules/runtime'
+import { createRegistry } from '@react-router-modules/runtime'
 import type { AppDependencies } from '@example/app-shared'
 import billing from '@example/billing-module'
 import users from '@example/users-module'
@@ -680,6 +672,8 @@ export const httpClient = wretch().defer((w) => {
 
 See the [React Compiler](#react-compiler) section for details on why and how to enable it.
 
+**Important:** When using workspace modules, Vite's `resolve.dedupe` is **mandatory** to prevent duplicate copies of shared libraries. Without it, each module may bundle its own copy of React, React Router, or Zustand, causing context mismatches, hook failures, and other subtle runtime errors.
+
 ```typescript
 // vite.config.ts
 import { defineConfig } from "vite";
@@ -688,6 +682,16 @@ import babel from "@rolldown/plugin-babel";
 
 export default defineConfig({
   plugins: [react(), babel({ presets: [reactCompilerPreset()] })],
+  resolve: {
+    dedupe: [
+      "react",
+      "react-dom",
+      "react/jsx-runtime",
+      "react-router",
+      "@tanstack/react-query",
+      "zustand",
+    ],
+  },
 });
 ```
 
@@ -723,8 +727,8 @@ defineModule<AppDependencies>({
 ### Rendering navigation in the layout
 
 ```typescript
-import { useNavigation } from '@tanstack-react-modules/runtime'
-import { Link, useLocation } from '@tanstack/react-router'
+import { useNavigation } from '@react-router-modules/runtime'
+import { Link, useLocation } from 'react-router'
 
 function Sidebar() {
   const navigation = useNavigation()
@@ -787,15 +791,15 @@ Every slot value must be an array type - the registry concatenates contributions
 ### Contributing from a module
 
 ```typescript
-import { defineModule } from "@tanstack-react-modules/core";
+import { defineModule } from "@react-router-modules/core";
 import type { AppDependencies, AppSlots } from "@myorg/app-shared";
 
 export default defineModule<AppDependencies, AppSlots>({
   id: "billing",
   version: "0.1.0",
-  createRoutes: (parentRoute) => {
+  createRoutes: () => [
     /* ... */
-  },
+  ],
 
   slots: {
     badges: [
@@ -817,7 +821,7 @@ Modules only contribute to the slots they care about - `slots` is `Partial<AppSl
 ### Reading slots in the shell
 
 ```typescript
-import { useSlots } from '@tanstack-react-modules/runtime'
+import { useSlots } from '@react-router-modules/runtime'
 import type { AppSlots } from '@myorg/app-shared'
 
 function StatusBar() {
@@ -871,7 +875,7 @@ Zones let the **currently active content** contribute UI components to named lay
 
 Zones have two contribution paths:
 
-- **Route-based modules** set zones via TanStack Router's `staticData` - different routes contribute different zone content as the user navigates.
+- **Route-based modules** set zones via React Router's `handle` - different routes contribute different zone content as the user navigates.
 - **Tab-based modules** declare zones on their module descriptor - the shell reads them when the module's workspace tab is active.
 
 ### Slots vs Zones
@@ -900,25 +904,24 @@ Zone values are optional - not every route populates every zone.
 
 ### Setting zones on a route
 
-Modules set zones via TanStack Router's `staticData` on individual routes. Different routes within the same module can contribute different zone components:
+Modules set zones via React Router's `handle` on individual routes. Different routes within the same module can contribute different zone components:
 
 ```typescript
-import { createRoute } from "@tanstack/react-router";
 import { UserDetailActions } from "./components/UserDetailActions.js";
 import { UserDetailPanel } from "./components/UserDetailPanel.js";
 
-const userDetail = createRoute({
-  getParentRoute: () => usersRoot,
-  path: "$userId",
-  component: UserDetailPage,
-  staticData: {
+// Route object with handle for zone contribution
+{
+  path: ":userId",
+  Component: UserDetailPage,
+  handle: {
     headerActions: UserDetailActions,
     detailPanel: UserDetailPanel,
   },
-});
+}
 ```
 
-Routes that don't set `staticData` simply contribute no zones - the shell renders nothing in those regions.
+Routes that don't set `handle` simply contribute no zones - the shell renders nothing in those regions.
 
 ### Setting zones on a module descriptor
 
@@ -945,7 +948,7 @@ The shell reads these zones via `useActiveZones(activeModuleId)` when the module
 Use `useActiveZones` to get a unified view of zones from both routes and the active module tab:
 
 ```typescript
-import { useActiveZones } from '@tanstack-react-modules/runtime'
+import { useActiveZones } from '@react-router-modules/runtime'
 import type { AppZones } from '@myorg/app-shared'
 
 function Layout() {
@@ -973,8 +976,8 @@ function Layout() {
 
 **Route zones (`useZones`):**
 
-1. `useZones()` calls TanStack Router's `useMatches()` with a `select` function.
-2. The select function walks matched routes from root to leaf, merging `staticData` entries.
+1. `useZones()` calls React Router's `useMatches()` to get the matched route hierarchy.
+2. It walks matched routes from root to leaf, merging `handle` entries.
 3. **Deepest match wins** - a child route can override a parent route's zone. A parent can set a default sidebar, and a specific detail page can replace it.
 4. The shell conditionally renders zone components. If a zone is `undefined`, nothing renders.
 
@@ -987,13 +990,13 @@ function Layout() {
 
 ### Performance
 
-- **No extra re-renders.** `staticData` is defined at route creation time - its reference is permanently stable. `useMatches` with `select` only triggers re-renders when the selected value actually changes.
-- **No context cascade.** Zones flow through TanStack Router's existing match data, not a custom React context.
+- **No extra re-renders.** `handle` is defined at route creation time - its reference is permanently stable. `useMatches` only triggers re-renders when the matched routes change.
+- **No context cascade.** Zones flow through React Router's existing match data, not a custom React context.
 - **No mount ordering issues.** Unlike portal-based approaches, zone components are rendered directly by the shell in its own React tree. They have normal access to all contexts (shared dependencies, router, React Query).
 
-### Type-safe staticData
+### Type-safe handle
 
-By default, TanStack Router's `staticData` accepts any object. To get compile-time checks on zone keys and component types, augment `StaticDataRouteOption` in app-shared:
+By default, React Router's `handle` accepts any object. To get compile-time checks on zone keys and component types, augment `HandleRouteOption` in app-shared:
 
 ```typescript
 // app-shared/src/index.ts
@@ -1002,20 +1005,20 @@ export interface AppZones {
   detailPanel?: ComponentType;
 }
 
-declare module "@tanstack/router-core" {
-  interface StaticDataRouteOption extends AppZones {}
+declare module "react-router" {
+  interface HandleRouteOption extends AppZones {}
 }
 ```
 
-With this augmentation, every `createRoute({ staticData: ... })` call across all modules is checked against `AppZones`. A typo like `detialPanel` or passing a string instead of a component becomes a compile error. This works because `StaticDataRouteOption` is an empty interface designed for declaration merging - the same pattern TanStack Router uses for `Register`.
+With this augmentation, every route object's `handle` field across all modules is checked against `AppZones`. A typo like `detialPanel` or passing a string instead of a component becomes a compile error. This works because `HandleRouteOption` is an empty interface designed for declaration merging.
 
-Add `@tanstack/router-core` as a peer dependency of app-shared so the augmentation resolves.
+Add `react-router` as a peer dependency of app-shared so the augmentation resolves.
 
 ### Route zones vs descriptor zones
 
-**Route-based modules** set zones on individual routes via `staticData`. A module with 5 routes can have different zone content for each - the user detail page shows a sidebar, the user list page shows nothing. This per-route granularity is the right model for route-based apps.
+**Route-based modules** set zones on individual routes via `handle`. A module with 5 routes can have different zone content for each - the user detail page shows a sidebar, the user list page shows nothing. This per-route granularity is the right model for route-based apps.
 
-**Tab-based modules** (component-only, rendered in workspace tabs) use the `zones` field on the module descriptor. Since these modules don't own routes, they can't use `staticData`. The descriptor's zones apply whenever the module's tab is active.
+**Tab-based modules** (component-only, rendered in workspace tabs) use the `zones` field on the module descriptor. Since these modules don't own routes, they can't use `handle`. The descriptor's zones apply whenever the module's tab is active.
 
 Use `useActiveZones(activeModuleId)` to unify both - one code path in the shell regardless of how the active content is rendered.
 
@@ -1023,38 +1026,35 @@ Use `useActiveZones(activeModuleId)` to unify both - one code path in the shell 
 
 A module like "Billing" may have its own tabs (invoices, payments, cards) while still being a single module. How zones work depends on the app style:
 
-**Route-based apps** — each sub-page is a child route with its own `staticData`. Zones update automatically as the user navigates between `/billing/invoices` and `/billing/payments`:
+**Route-based apps** — each sub-page is a child route with its own `handle`. Zones update automatically as the user navigates between `/billing/invoices` and `/billing/payments`:
 
 ```typescript
-import { createRoute, lazyRouteComponent } from "@tanstack/react-router";
 import { InvoiceActions } from "./components/InvoiceActions.js";
 import { PaymentsSidebar } from "./components/PaymentsSidebar.js";
 
-const billingRoot = createRoute({
-  getParentRoute: () => parentRoute,
+// Route objects returned from createRoutes
+{
   path: "billing",
-  component: BillingLayout, // renders a tab strip + <Outlet />
-});
-
-const invoices = createRoute({
-  getParentRoute: () => billingRoot,
-  path: "invoices",
-  component: lazyRouteComponent(() => import("./pages/Invoices.js")),
-  staticData: {
-    detailPanel: InvoiceSidebar,
-    headerActions: InvoiceActions,
-  },
-});
-
-const payments = createRoute({
-  getParentRoute: () => billingRoot,
-  path: "payments",
-  component: lazyRouteComponent(() => import("./pages/Payments.js")),
-  staticData: {
-    detailPanel: PaymentsSidebar,
-    // no headerActions — zone is undefined, shell renders fallback
-  },
-});
+  Component: BillingLayout, // renders a tab strip + <Outlet />
+  children: [
+    {
+      path: "invoices",
+      lazy: () => import("./pages/Invoices.js").then(m => ({ Component: m.default })),
+      handle: {
+        detailPanel: InvoiceSidebar,
+        headerActions: InvoiceActions,
+      },
+    },
+    {
+      path: "payments",
+      lazy: () => import("./pages/Payments.js").then(m => ({ Component: m.default })),
+      handle: {
+        detailPanel: PaymentsSidebar,
+        // no headerActions — zone is undefined, shell renders fallback
+      },
+    },
+  ],
+}
 ```
 
 The module's `BillingLayout` component renders its own tab strip UI and an `<Outlet />`. The router handles the rest — each child route contributes its own zones.
@@ -1121,7 +1121,7 @@ export interface WorkflowMeta {
 Then use it as the third generic on `defineModule`:
 
 ```typescript
-import { defineModule } from "@tanstack-react-modules/core";
+import { defineModule } from "@react-router-modules/core";
 import { lazy } from "react";
 import type { AppDependencies, AppSlots, WorkflowMeta } from "@myorg/app-shared";
 
@@ -1147,7 +1147,7 @@ TypeScript will error if `meta` is missing required fields or has typos. The `TM
 Use `getModuleMeta<TMeta>()` to read metadata without casts:
 
 ```typescript
-import { useModules, getModuleMeta } from '@tanstack-react-modules/runtime'
+import { useModules, getModuleMeta } from '@react-router-modules/runtime'
 import type { WorkflowMeta } from '@myorg/app-shared'
 
 function DirectoryPage() {
@@ -1189,14 +1189,14 @@ function WorkspaceTab({ moduleId, context }: { moduleId: string; context: unknow
 
 ### When to use meta vs navigation vs slots vs commands
 
-| Data                                                  | Mechanism            | Why                                                             |
-| ----------------------------------------------------- | -------------------- | --------------------------------------------------------------- |
-| Sidebar links                                         | `navigation`         | Framework builds NavigationManifest with grouping/sorting       |
-| Module-specific self-executing actions                | `slots.commands`     | "Create Invoice", "Export Report" - the module owns the handler |
-| Tab types, badges, other aggregated data              | `slots`              | Aggregated arrays from all modules                              |
-| Module identity for directory/catalog/command palette | `meta`               | Per-module descriptive data for discovery UIs                   |
-| Route-specific panel/header content                   | `staticData` (zones) | Changes per route within a module                               |
-| Tab-active panel/header content                       | Descriptor `zones`   | Shown when the module's tab is active                           |
+| Data                                                  | Mechanism          | Why                                                             |
+| ----------------------------------------------------- | ------------------ | --------------------------------------------------------------- |
+| Sidebar links                                         | `navigation`       | Framework builds NavigationManifest with grouping/sorting       |
+| Module-specific self-executing actions                | `slots.commands`   | "Create Invoice", "Export Report" - the module owns the handler |
+| Tab types, badges, other aggregated data              | `slots`            | Aggregated arrays from all modules                              |
+| Module identity for directory/catalog/command palette | `meta`             | Per-module descriptive data for discovery UIs                   |
+| Route-specific panel/header content                   | `handle` (zones)   | Changes per route within a module                               |
+| Tab-active panel/header content                       | Descriptor `zones` | Shown when the module's tab is active                           |
 
 **Key rule:** Every command must have an `onSelect` handler - the module owns its actions. Don't use `slots.commands` for things the shell handles: journey launching comes from `meta` (discovered via `useModules()`), navigation comes from `navigation` entries, and system launching comes from domain-specific slots. If the module can't execute the action itself, it belongs in a different mechanism.
 
@@ -1344,7 +1344,7 @@ This boilerplate multiplies with every scoped concern - tabs, notes, workflow st
 ### The solution
 
 ```typescript
-import { createScopedStore } from "@tanstack-react-modules/core";
+import { createScopedStore } from "@react-router-modules/core";
 
 // Define once - each interaction gets its own independent store
 const tabState = createScopedStore<TabState>(() => ({
@@ -1419,7 +1419,7 @@ scoped.useScoped(scopeId, selector) // React hook - selected slice
 
 React Compiler is a build-time tool that automatically optimizes React components by inserting memoization where needed. This is particularly valuable in a modular architecture where components are composed dynamically across package boundaries.
 
-### Why it matters for tanstack-react-modules
+### Why it matters for react-router-modules
 
 In a module-based app, the shell composes a deep provider tree and modules are loaded lazily. Without memoization, a state change in one provider (e.g., auth store) could trigger unnecessary re-renders down through the entire tree. Traditionally you'd prevent this with manual `React.memo()`, `useMemo()`, and `useCallback()` - but this is tedious and error-prone across independently developed modules.
 
@@ -1449,7 +1449,7 @@ The compiler runs at the shell level during bundling, so it optimizes both shell
 
 ### Compatibility
 
-React Compiler requires React 19. All tanstack-react-modules framework packages target React 19 as a peer dependency.
+React Compiler requires React 19. All react-router-modules framework packages target React 19 as a peer dependency.
 
 The framework's hooks (`useStore`, `useService`, `useNavigation`) follow React's rules of hooks and are fully compatible with the compiler. Avoid patterns the compiler cannot optimize:
 
@@ -1463,12 +1463,12 @@ See the [React Compiler documentation](https://react.dev/learn/react-compiler) f
 
 ## Testing Modules
 
-`@tanstack-react-modules/testing` provides `renderModule()` to test a module in isolation with mocked dependencies. It supports both route-based modules and component-only modules.
+`@react-router-modules/testing` provides `renderModule()` to test a module in isolation with mocked dependencies. It supports both route-based modules and component-only modules.
 
 ### Route-based module
 
 ```typescript
-import { renderModule, createMockStore } from "@tanstack-react-modules/testing";
+import { renderModule, createMockStore } from "@react-router-modules/testing";
 import billing from "@example/billing-module";
 import type { AuthStore } from "@example/app-shared";
 import wretch from "wretch";
@@ -1497,7 +1497,7 @@ test("billing dashboard shows user name", async () => {
 Modules that use `component` instead of `createRoutes` (workspace-style journeys, panels) are rendered directly inside the provider tree - no router needed:
 
 ```typescript
-import { renderModule, createMockStore } from "@tanstack-react-modules/testing";
+import { renderModule, createMockStore } from "@react-router-modules/testing";
 import paymentsModule from "@myorg/module-payments";
 import type { AuthStore } from "@myorg/app-shared";
 
@@ -1572,12 +1572,12 @@ The module's code is only loaded when the user first navigates to `/admin/*`.
 ## Project Structure
 
 ```
-tanstack-react-modules/
+react-router-modules/
 ├── packages/
-│   ├── cli/                     # @tanstack-react-modules/cli - project scaffolding CLI
-│   ├── core/                    # @tanstack-react-modules/core - module types, hooks, defineModule()
-│   ├── registry/                # @tanstack-react-modules/runtime - composition, validation, providers
-│   └── testing/                 # @tanstack-react-modules/testing - test harness
+│   ├── cli/                     # @react-router-modules/cli - project scaffolding CLI
+│   ├── core/                    # @react-router-modules/core - module types, hooks, defineModule()
+│   ├── runtime/                 # @react-router-modules/runtime - composition, validation, providers
+│   └── testing/                 # @react-router-modules/testing - test harness
 ├── examples/
 │   ├── app-shared/              # @example/app-shared - types, hooks, API contracts
 │   ├── shell/                   # Example host app (Vite 8 + React Compiler)
@@ -1591,12 +1591,12 @@ tanstack-react-modules/
 
 ### Framework packages
 
-| Package                           | Purpose                                                                                   | Size           |
-| --------------------------------- | ----------------------------------------------------------------------------------------- | -------------- |
-| `@tanstack-react-modules/core`    | Module types, `defineModule()`, `createSharedHooks()`                                     | ~1 KB          |
-| `@tanstack-react-modules/runtime` | `createRegistry()`, route composition, validation, navigation manifest, `useNavigation()` | ~5.6 KB        |
-| `@tanstack-react-modules/testing` | `renderModule()`, `createMockStore()`                                                     | ~1 KB          |
-| `@tanstack-react-modules/cli`     | `reactive init`, `reactive create module`, `reactive create store`                        | N/A (Node CLI) |
+| Package                         | Purpose                                                                                   | Size           |
+| ------------------------------- | ----------------------------------------------------------------------------------------- | -------------- |
+| `@react-router-modules/core`    | Module types, `defineModule()`, `createSharedHooks()`                                     | ~1 KB          |
+| `@react-router-modules/runtime` | `createRegistry()`, route composition, validation, navigation manifest, `useNavigation()` | ~5.6 KB        |
+| `@react-router-modules/testing` | `renderModule()`, `createMockStore()`                                                     | ~1 KB          |
+| `@react-router-modules/cli`     | `reactive init`, `reactive create module`, `reactive create store`                        | N/A (Node CLI) |
 
 ### Building packages
 
@@ -1604,7 +1604,7 @@ Framework packages use Vite 8 library mode (ESM only):
 
 ```bash
 pnpm build                    # Build all packages + shell
-pnpm --filter @tanstack-react-modules/core build   # Build a single package
+pnpm --filter @react-router-modules/core build   # Build a single package
 pnpm --filter shell dev       # Run example shell in dev mode
 ```
 
@@ -1614,7 +1614,7 @@ pnpm --filter shell dev       # Run example shell in dev mode
 
 This project ships AI coding skills in the `skills/` directory, following the [skills-npm](https://github.com/antfu/skills-npm) convention. Skills are structured instructions that help AI coding assistants (Claude Code, Cursor, Copilot, etc.) perform framework-specific tasks correctly — creating modules, wiring dependencies, writing tests, and so on.
 
-The `@tanstack-react-modules/skills` package declares the following skills:
+The `@react-router-modules/skills` package declares the following skills:
 
 | Skill                      | Description                                                                |
 | -------------------------- | -------------------------------------------------------------------------- |
@@ -1643,7 +1643,7 @@ This scans `node_modules` for packages with skills and symlinks them into your p
 
 ## CLI Reference
 
-`@tanstack-react-modules/cli` provides commands for scaffolding projects, modules, and stores. All commands support both interactive (prompts) and non-interactive (flags) modes.
+`@react-router-modules/cli` provides commands for scaffolding projects, modules, and stores. All commands support both interactive (prompts) and non-interactive (flags) modes.
 
 ### reactive init
 
@@ -1746,7 +1746,7 @@ npx playwright test
 
 ## API Reference
 
-### @tanstack-react-modules/core
+### @react-router-modules/core
 
 | Export                              | Type     | Description                                                                                    |
 | ----------------------------------- | -------- | ---------------------------------------------------------------------------------------------- |
@@ -1769,7 +1769,7 @@ npx playwright test
 | `ZoneMapOf<T>`                      | Type     | F-bounded constraint for zone types — accepts interfaces without index signatures.             |
 | `ScopedStore<T>`                    | Type     | Return type of `createScopedStore`. Provides `getOrCreate`, `useScoped`, `remove`, `clear`.    |
 
-### @tanstack-react-modules/runtime
+### @react-router-modules/runtime
 
 | Export                                   | Type      | Description                                                                                   |
 | ---------------------------------------- | --------- | --------------------------------------------------------------------------------------------- |
@@ -1777,7 +1777,7 @@ npx playwright test
 | `buildSlotsManifest(modules, defaults?)` | Function  | Concatenates slot contributions from multiple modules. Used internally and by testing.        |
 | `useNavigation()`                        | Hook      | Access the navigation manifest from any component inside `<App />`.                           |
 | `useSlots<S>()`                          | Hook      | Access collected slot contributions from all modules.                                         |
-| `useZones<Z>()`                          | Hook      | Access zone components from the currently matched route's `staticData`.                       |
+| `useZones<Z>()`                          | Hook      | Access zone components from the currently matched route's `handle`.                           |
 | `useActiveZones<Z>(moduleId?)`           | Hook      | Merge route zones with the active module's descriptor zones. Module wins for same key.        |
 | `useModules()`                           | Hook      | Access registered module summaries (id, version, meta, component).                            |
 | `getModuleMeta<T>(entry)`                | Function  | Type-safe accessor for module metadata. Returns `T \| undefined`.                             |
@@ -1792,7 +1792,7 @@ npx playwright test
 | `NavigationGroup`                        | Type      | `{ group, items }`.                                                                           |
 | `ResolveOptions`                         | Type      | `{ rootComponent, indexComponent, notFoundComponent }`.                                       |
 
-### @tanstack-react-modules/testing
+### @react-router-modules/testing
 
 | Export                            | Type     | Description                                                                                                               |
 | --------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------- |

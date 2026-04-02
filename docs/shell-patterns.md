@@ -4,6 +4,29 @@ This guide covers patterns for building shell applications with the reactive fra
 
 > **Building a workspace-style app** (tabbed workspaces, component-only modules, per-session state)? See [Workspace Patterns](workspace-patterns.md) after reading this guide - it builds on the foundation covered here.
 
+## Vite Dependency Deduplication (Required)
+
+When using workspace modules, you **must** configure Vite's `resolve.dedupe` in the shell's `vite.config.ts` to prevent duplicate copies of shared libraries. Without it, each module may bundle its own copy of React, React Router, or Zustand, causing context mismatches, hook failures, and other subtle runtime errors.
+
+```typescript
+// shell/vite.config.ts
+export default defineConfig({
+  // ...plugins
+  resolve: {
+    dedupe: [
+      "react",
+      "react-dom",
+      "react/jsx-runtime",
+      "react-router",
+      "@tanstack/react-query",
+      "zustand",
+    ],
+  },
+});
+```
+
+The CLI's `reactive init` command generates this configuration automatically.
+
 ## Multi-Zone Shell Layout
 
 A basic shell has a sidebar and a content area. A complex shell has multiple zones - a mode rail, a customer banner, a main content area, a contextual panel.
@@ -14,8 +37,8 @@ The shell's `rootComponent` owns the entire layout. Use CSS Grid to define zones
 
 ```typescript
 // shell/src/components/Layout.tsx
-import { Outlet } from '@tanstack/react-router'
-import { useNavigation, useSlots, useZones } from '@tanstack-react-modules/runtime'
+import { Outlet } from 'react-router'
+import { useNavigation, useSlots, useZones } from '@react-router-modules/runtime'
 import type { AppSlots, AppZones } from '@myorg/app-shared'
 
 export function Layout() {
@@ -52,13 +75,13 @@ export function Layout() {
 
 ### Which mechanism for which zone
 
-| Zone content                                                        | Source                                                            |
-| ------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| Navigation links and mode switches                                  | `useNavigation()` - modules declare `navigation` items            |
-| Commands, badges, aggregated contributions                          | `useSlots()` - modules declare `slots` contributions              |
-| Route-specific UI for layout regions (detail panel, header actions) | `useZones()` - active route declares `staticData`                 |
-| Active selection, panel visibility                                  | Shared Zustand store - runtime state                              |
-| Route-based page content                                            | `<Outlet />` - TanStack Router renders the active module's routes |
+| Zone content                                                        | Source                                                         |
+| ------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Navigation links and mode switches                                  | `useNavigation()` - modules declare `navigation` items         |
+| Commands, badges, aggregated contributions                          | `useSlots()` - modules declare `slots` contributions           |
+| Route-specific UI for layout regions (detail panel, header actions) | `useZones()` - active route declares `handle`                  |
+| Active selection, panel visibility                                  | Shared Zustand store - runtime state                           |
+| Route-based page content                                            | `<Outlet />` - React Router renders the active module's routes |
 
 ## Command Palette Pattern
 
@@ -127,7 +150,7 @@ export default defineModule<AppDependencies, AppSlots>({
 The shell aggregates all sources. Journey modules appear via `useModules()`, not `slots.commands`:
 
 ```typescript
-import { useSlots, useModules, getModuleMeta, useNavigation } from '@tanstack-react-modules/runtime'
+import { useSlots, useModules, getModuleMeta, useNavigation } from '@react-router-modules/runtime'
 import type { AppSlots, WorkflowMeta } from '@myorg/app-shared'
 
 function CommandPalette({ search }: { search: string }) {
@@ -185,7 +208,7 @@ function CommandPalette({ search }: { search: string }) {
 
 ## Auth Guard Pattern
 
-The registry follows TanStack Router's recommended `_authenticated` layout route pattern. Auth guards live on a layout route that wraps protected routes, while public routes (login, signup) sit outside the boundary.
+The registry follows React Router's recommended `_authenticated` layout route pattern. Auth guards live on a layout route that wraps protected routes, while public routes (login, signup) sit outside the boundary.
 
 ### Layout route as auth boundary (recommended)
 
@@ -198,22 +221,24 @@ const { App } = registry.resolve({
 
   // Auth boundary - guards module routes and index
   authenticatedRoute: {
-    beforeLoad: async () => {
+    loader: async () => {
       const res = await fetch("/api/auth/session");
-      if (!res.ok) throw redirect({ to: "/login" });
+      if (!res.ok) throw redirect("/login");
+      return null;
     },
-    component: ShellLayout, // optional - defaults to <Outlet />
+    Component: ShellLayout, // optional - defaults to <Outlet />
   },
 
   // Public routes - outside the auth boundary
-  shellRoutes: (root) => [
-    createRoute({ getParentRoute: () => root, path: "/login", component: LoginPage }),
-    createRoute({ getParentRoute: () => root, path: "/signup", component: SignupPage }),
+  shellRoutes: () => [
+    { path: "/login", Component: LoginPage },
+    { path: "/signup", Component: SignupPage },
   ],
 
   // Runs for ALL routes (including /login) - use for observability, not auth
-  beforeLoad: ({ location }) => {
-    analytics.trackPageView(location.pathname);
+  loader: ({ request }) => {
+    analytics.trackPageView(new URL(request.url).pathname);
+    return null;
   },
 });
 ```
@@ -221,7 +246,7 @@ const { App } = registry.resolve({
 This produces the route tree:
 
 ```
-Root (beforeLoad: observability - runs for all routes)
+Root (loader: observability - runs for all routes)
 ├── /login (public - no auth guard)
 ├── /signup (public - no auth guard)
 └── _authenticated (layout - auth guard protects children)
@@ -229,7 +254,7 @@ Root (beforeLoad: observability - runs for all routes)
     └── /billing, /users, etc. (module routes)
 ```
 
-The separation is structural: `beforeLoad` on root is for logic that runs everywhere (observability, feature flags), while `authenticatedRoute.beforeLoad` is strictly for auth.
+The separation is structural: `loader` on root is for logic that runs everywhere (observability, feature flags), while `authenticatedRoute.loader` is strictly for auth.
 
 ### Guard in individual module routes
 
@@ -238,22 +263,22 @@ For per-module auth or role-based access, guard at the module level:
 ```typescript
 export default defineModule<AppDependencies, AppSlots>({
   id: "admin",
-  createRoutes: (parentRoute) => {
-    const root = createRoute({
-      getParentRoute: () => parentRoute,
+  createRoutes: () => [
+    {
       path: "admin",
-      beforeLoad: () => {
+      loader: () => {
         // Access auth store directly (not via hook - this runs outside React)
         const { role } = authStore.getState();
-        if (role !== "admin") throw redirect({ to: "/" });
+        if (role !== "admin") throw redirect("/");
+        return null;
       },
-    });
-    // ... child routes
-  },
+      // ... child routes via children: [...]
+    },
+  ],
 });
 ```
 
-Note: `beforeLoad` runs outside the React tree, so you access stores via `store.getState()` rather than hooks.
+Note: `loader` runs outside the React tree, so you access stores via `store.getState()` rather than hooks.
 
 ## Module-to-Shell Communication
 
@@ -308,22 +333,21 @@ queryClient.invalidateQueries({ queryKey: ["invoices"] });
 Use for UI components that the currently active route wants rendered in shell layout regions. Unlike slots (static, from all modules), zones change on every navigation and come from the active route.
 
 ```typescript
-// Module sets zones via TanStack Router's staticData on individual routes
-const userDetail = createRoute({
-  getParentRoute: () => usersRoot,
-  path: "$userId",
-  component: UserDetailPage,
-  staticData: {
+// Module sets zones via React Router's handle on individual routes
+{
+  path: ":userId",
+  Component: UserDetailPage,
+  handle: {
     detailPanel: UserDetailSidebar,
     headerActions: UserDetailActions,
   },
-});
+}
 ```
 
 The shell reads them via `useZones()`:
 
 ```typescript
-import { useZones } from '@tanstack-react-modules/runtime'
+import { useZones } from '@react-router-modules/runtime'
 import type { AppZones } from '@myorg/app-shared'
 
 function Layout() {
@@ -339,7 +363,7 @@ function Layout() {
 }
 ```
 
-Deeper routes override shallower ones. A billing section root can set a default sidebar, and the invoice detail page can replace it. Routes that don't set `staticData` contribute no zones.
+Deeper routes override shallower ones. A billing section root can set a default sidebar, and the invoice detail page can replace it. Routes that don't set `handle` contribute no zones.
 
 > **Workspace apps:** If your modules render in tabs (not routes), use `useActiveZones()` instead - it merges route zones with the active module's descriptor zones. See [Workspace Patterns - Descriptor Zones](workspace-patterns.md#step-4-descriptor-zones-and-useactivezones).
 
@@ -348,7 +372,7 @@ Deeper routes override shallower ones. A billing section root can set a default 
 | Question                                           | Answer                                                                   |
 | -------------------------------------------------- | ------------------------------------------------------------------------ |
 | Is it known at module registration time?           | Slots                                                                    |
-| Does it vary per route within a module?            | Route zones (`staticData`)                                               |
+| Does it vary per route within a module?            | Route zones (`handle`)                                                   |
 | Does it change at runtime?                         | Shared store                                                             |
 | Is it an external source you subscribe to?         | Reactive service (`useReactiveService`)                                  |
 | Does it come from an API?                          | React Query                                                              |
@@ -359,7 +383,7 @@ Deeper routes override shallower ones. A billing section root can set a default 
 For modules that only contribute slot data (no component, no routes), use `defineSlots` instead of `defineModule` to reduce boilerplate:
 
 ```typescript
-import { defineSlots } from "@tanstack-react-modules/core";
+import { defineSlots } from "@react-router-modules/core";
 import type { AppDependencies, AppSlots } from "@myorg/app-shared";
 
 export default defineSlots<AppDependencies, AppSlots>("external-systems", {

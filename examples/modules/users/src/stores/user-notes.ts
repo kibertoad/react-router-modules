@@ -1,4 +1,4 @@
-import { createScopedStore } from "@tanstack-react-modules/core";
+import { createScopedStore } from "@react-router-modules/core";
 
 interface UserNotesState {
   notes: string;

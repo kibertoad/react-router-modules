@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { defineModule } from "@tanstack-react-modules/core";
+import { defineModule } from "@react-router-modules/core";
 import { resolveModule } from "./resolve-module.js";
 
 interface TestSlots {

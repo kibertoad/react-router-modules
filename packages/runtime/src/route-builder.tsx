@@ -1,13 +1,13 @@
-import { createRootRoute, createRoute, Outlet } from "@tanstack/react-router";
-import type { AnyRoute } from "@tanstack/react-router";
-import type { ReactiveModuleDescriptor, LazyModuleDescriptor } from "@tanstack-react-modules/core";
+import { Outlet } from "react-router";
+import type { RouteObject } from "react-router";
+import type { ReactiveModuleDescriptor, LazyModuleDescriptor } from "@react-router-modules/core";
 
 export interface RouteBuilderOptions {
   /**
-   * Pre-built root route. If provided, rootComponent/notFoundComponent/beforeLoad
+   * Pre-built root route. If provided, rootComponent/notFoundComponent/loader
    * are ignored — configure them directly on this route instead.
    */
-  rootRoute?: AnyRoute;
+  rootRoute?: RouteObject;
   /** Component for the root layout (renders <Outlet /> for child routes) */
   rootComponent?: () => React.JSX.Element;
   /** Component for the index route (/) */
@@ -19,19 +19,19 @@ export interface RouteBuilderOptions {
    * Runs for ALL routes including public ones.
    * Ignored if rootRoute is provided.
    */
-  beforeLoad?: (ctx: { location: { pathname: string } }) => void | Promise<void>;
+  loader?: (args: { request: Request; params: Record<string, string | undefined> }) => any;
   /**
    * Auth boundary — a pathless layout route that wraps module routes and
    * the index route. Shell routes (login, error pages) sit outside this
    * boundary and are NOT guarded.
    *
-   * Follows TanStack Router's recommended `_authenticated` layout pattern.
+   * Follows React Router's recommended layout route pattern.
    *
    * When provided, the route tree becomes:
    * ```
-   * Root (beforeLoad runs for ALL routes)
+   * Root (loader runs for ALL routes)
    * ├── shellRoutes (public — /login, /signup, etc.)
-   * └── _authenticated (layout — beforeLoad guards children)
+   * └── _authenticated (layout — loader guards children)
    *     ├── / (indexComponent)
    *     └── module routes
    * ```
@@ -40,97 +40,131 @@ export interface RouteBuilderOptions {
    */
   authenticatedRoute?: {
     /** Auth guard — throw redirect() to deny access */
-    beforeLoad: (ctx: { location: { pathname: string } }) => void | Promise<void>;
+    loader: (args: { request: Request; params: Record<string, string | undefined> }) => any;
     /** Layout component for authenticated pages. Defaults to <Outlet />. */
-    component?: () => React.JSX.Element;
+    Component?: () => React.JSX.Element;
   };
   /** Additional routes owned by the shell (login, error pages, etc.) */
-  shellRoutes?: (parentRoute: AnyRoute) => AnyRoute[];
+  shellRoutes?: () => RouteObject[];
 }
 
 /**
- * Composes all module route subtrees into a single TanStack Router route tree.
+ * Composes all module route subtrees into a React Router route tree.
  * Modules without createRoutes are skipped (headless modules).
  */
 export function buildRouteTree(
   modules: ReactiveModuleDescriptor[],
   lazyModules: LazyModuleDescriptor[],
   options?: RouteBuilderOptions,
-): AnyRoute {
-  // Use provided root route or create one from options
-  const rootRoute =
-    options?.rootRoute ??
-    createRootRoute({
-      component: options?.rootComponent,
-      notFoundComponent: options?.notFoundComponent,
-      beforeLoad: options?.beforeLoad,
-    });
+): RouteObject[] {
+  // If a custom root route is provided, use it as the base
+  if (options?.rootRoute) {
+    const rootChildren: RouteObject[] = [...(options.rootRoute.children ?? [])];
 
-  const rootChildren: AnyRoute[] = [];
+    // Shell-owned routes (login, error pages) — always direct children of root
+    if (options?.shellRoutes) {
+      rootChildren.push(...options.shellRoutes());
+    }
+
+    const protectedChildren: RouteObject[] = [];
+
+    // Add index route if provided
+    if (options?.indexComponent) {
+      protectedChildren.push({
+        index: true,
+        Component: options.indexComponent,
+      });
+    }
+
+    // Eager modules
+    for (const mod of modules) {
+      if (!mod.createRoutes) continue;
+      const routes = mod.createRoutes();
+      protectedChildren.push(...(Array.isArray(routes) ? routes : [routes]));
+    }
+
+    // Lazy modules
+    for (const lazyMod of lazyModules) {
+      protectedChildren.push(createLazyModuleRoute(lazyMod));
+    }
+
+    if (options?.authenticatedRoute) {
+      rootChildren.push(
+        createAuthenticatedLayoutRoute(options.authenticatedRoute, protectedChildren),
+      );
+    } else {
+      rootChildren.push(...protectedChildren);
+    }
+
+    options.rootRoute.children = rootChildren;
+    return [options.rootRoute];
+  }
+
+  // Build root route from options
+  const rootChildren: RouteObject[] = [];
 
   // Shell-owned routes (login, error pages) — always direct children of root
   if (options?.shellRoutes) {
-    rootChildren.push(...options.shellRoutes(rootRoute));
+    rootChildren.push(...options.shellRoutes());
   }
 
-  // Determine parent for protected routes (index + modules)
-  const protectedParent = options?.authenticatedRoute
-    ? createAuthenticatedLayoutRoute(rootRoute, options.authenticatedRoute)
-    : rootRoute;
-
-  const protectedChildren: AnyRoute[] = [];
+  const protectedChildren: RouteObject[] = [];
 
   // Add index route if provided
   if (options?.indexComponent) {
-    protectedChildren.push(
-      createRoute({
-        getParentRoute: () => protectedParent,
-        path: "/",
-        component: options.indexComponent,
-      }),
-    );
+    protectedChildren.push({
+      index: true,
+      Component: options.indexComponent,
+    });
   }
 
-  // Eager modules: call createRoutes with protectedParent as parent
+  // Eager modules: call createRoutes
   for (const mod of modules) {
     if (!mod.createRoutes) continue;
-    protectedChildren.push(mod.createRoutes(protectedParent));
+    const routes = mod.createRoutes();
+    protectedChildren.push(...(Array.isArray(routes) ? routes : [routes]));
   }
 
   // Lazy modules
   for (const lazyMod of lazyModules) {
-    protectedChildren.push(createLazyModuleRoute(protectedParent, lazyMod));
+    protectedChildren.push(createLazyModuleRoute(lazyMod));
   }
 
   if (options?.authenticatedRoute) {
-    // Auth layout is a child of root, protected routes are children of the layout
-    rootChildren.push(protectedParent.addChildren(protectedChildren));
+    rootChildren.push(
+      createAuthenticatedLayoutRoute(options.authenticatedRoute, protectedChildren),
+    );
   } else {
-    // No auth boundary — everything is a direct child of root
     rootChildren.push(...protectedChildren);
   }
 
-  return rootRoute.addChildren(rootChildren);
+  const rootRoute: RouteObject = {
+    path: "/",
+    Component: options?.rootComponent,
+    loader: options?.loader,
+    children: rootChildren,
+  };
+
+  return [rootRoute];
 }
 
 function createAuthenticatedLayoutRoute(
-  rootRoute: AnyRoute,
   auth: NonNullable<RouteBuilderOptions["authenticatedRoute"]>,
-): AnyRoute {
-  return createRoute({
-    getParentRoute: () => rootRoute,
+  children: RouteObject[],
+): RouteObject {
+  return {
     id: "_authenticated",
-    component: auth.component ?? (() => <Outlet />),
-    beforeLoad: auth.beforeLoad,
-  });
+    Component: auth.Component ?? (() => <Outlet />),
+    loader: auth.loader,
+    children,
+  };
 }
 
-function createLazyModuleRoute(parentRoute: AnyRoute, _lazyMod: LazyModuleDescriptor): AnyRoute {
+function createLazyModuleRoute(_lazyMod: LazyModuleDescriptor): RouteObject {
   // TODO: Implement lazy module loading properly
   // For now, create a placeholder route
-  return createRoute({
-    getParentRoute: () => parentRoute,
+  return {
     path: _lazyMod.basePath.replace(/^\//, ""),
-    component: () => null,
-  });
+    Component: () => null,
+  };
 }

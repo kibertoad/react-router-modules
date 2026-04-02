@@ -11,7 +11,7 @@ export function useNavigation(): NavigationManifest {
   const nav = useContext(NavigationContext);
   if (!nav) {
     throw new Error(
-      "[@tanstack-react-modules/runtime] useNavigation must be used within a <ReactiveApp />.",
+      "[@react-router-modules/runtime] useNavigation must be used within a <ReactiveApp />.",
     );
   }
   return nav;

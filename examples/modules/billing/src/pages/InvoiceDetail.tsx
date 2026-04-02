@@ -1,10 +1,10 @@
 import { useService, getInvoiceContract } from "@example/app-shared";
 import { sendByContract } from "@lokalise/frontend-http-client";
 import { useQuery } from "@tanstack/react-query";
-import { useParams, Link } from "@tanstack/react-router";
+import { useParams, Link } from "react-router";
 
 export default function InvoiceDetail() {
-  const { invoiceId } = useParams({ strict: false }) as { invoiceId: string };
+  const { invoiceId } = useParams() as { invoiceId: string };
   const httpClient = useService("httpClient");
 
   const {

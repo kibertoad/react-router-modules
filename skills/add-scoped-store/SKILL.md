@@ -45,7 +45,7 @@ export interface Tab {
 
 ```typescript
 // shell/src/stores/interaction-tabs.ts (or in the module that owns this state)
-import { createScopedStore } from "@tanstack-react-modules/core";
+import { createScopedStore } from "@react-router-modules/core";
 import type { TabState, Tab } from "@example/app-shared";
 
 function createDirectoryTab(): Tab {

@@ -1,5 +1,5 @@
-import { createRouter } from "@tanstack/react-router";
-import type { AnyRoute } from "@tanstack/react-router";
+import { createBrowserRouter, createMemoryRouter } from "react-router";
+import type { RouteObject } from "react-router";
 import type { StoreApi } from "zustand";
 import type {
   ReactiveModuleDescriptor,
@@ -7,7 +7,7 @@ import type {
   ReactiveService,
   SlotMap,
   SlotMapOf,
-} from "@tanstack-react-modules/core";
+} from "@react-router-modules/core";
 
 import type {
   RegistryConfig,
@@ -45,10 +45,10 @@ export interface ResolveOptions {
   /**
    * Pre-built root route — if provided, used instead of auto-creating one.
    * Use this when you need full control over the root route config
-   * (beforeLoad, loader, errorComponent, pendingComponent, etc.).
-   * Mutually exclusive with rootComponent/notFoundComponent/beforeLoad.
+   * (loader, errorElement, etc.).
+   * Mutually exclusive with rootComponent/notFoundComponent/loader.
    */
-  rootRoute?: AnyRoute;
+  rootRoute?: RouteObject;
 
   /** Component for the index route (/) */
   indexComponent?: () => React.JSX.Element;
@@ -59,22 +59,22 @@ export interface ResolveOptions {
   /**
    * Called before every route loads — for observability, analytics, feature flags.
    * Runs for ALL routes including public ones like /login.
-   * Throw a `redirect()` from @tanstack/react-router to redirect.
-   * Ignored if rootRoute is provided (configure beforeLoad on your root route instead).
+   * Throw a `redirect()` from react-router to redirect.
+   * Ignored if rootRoute is provided (configure loader on your root route instead).
    *
    * For auth guards, use `authenticatedRoute` instead — it creates a layout route
    * boundary that only wraps protected routes.
    */
-  beforeLoad?: (ctx: { location: { pathname: string } }) => void | Promise<void>;
+  loader?: (args: { request: Request; params: Record<string, string | undefined> }) => any;
 
   /**
    * Auth boundary — a pathless layout route that guards module routes and
    * the index route. Shell routes (login, error pages) sit outside this
    * boundary and are NOT guarded.
    *
-   * Follows TanStack Router's recommended `_authenticated` layout pattern:
+   * Follows React Router's recommended layout route pattern:
    * ```
-   * Root (beforeLoad runs for ALL routes — observability, etc.)
+   * Root (loader runs for ALL routes — observability, etc.)
    * ├── shellRoutes (public — /login, /signup)
    * └── _authenticated (layout — auth guard)
    *     ├── / (indexComponent)
@@ -85,23 +85,24 @@ export interface ResolveOptions {
    * ```ts
    * registry.resolve({
    *   authenticatedRoute: {
-   *     beforeLoad: async () => {
+   *     loader: async () => {
    *       const res = await fetch('/api/auth/session')
-   *       if (!res.ok) throw redirect({ to: '/login' })
+   *       if (!res.ok) throw redirect('/login')
+   *       return null
    *     },
-   *     component: ShellLayout,
+   *     Component: ShellLayout,
    *   },
-   *   shellRoutes: (root) => [
-   *     createRoute({ getParentRoute: () => root, path: '/login', component: LoginPage }),
+   *   shellRoutes: () => [
+   *     { path: '/login', Component: LoginPage },
    *   ],
    * })
    * ```
    */
   authenticatedRoute?: {
     /** Auth guard — throw redirect() to deny access */
-    beforeLoad: (ctx: { location: { pathname: string } }) => void | Promise<void>;
+    loader: (args: { request: Request; params: Record<string, string | undefined> }) => any;
     /** Layout component for authenticated pages. Defaults to <Outlet />. */
-    component?: () => React.JSX.Element;
+    Component?: () => React.JSX.Element;
   };
 
   /**
@@ -112,7 +113,7 @@ export interface ResolveOptions {
    * are siblings of the auth layout, not children. This is the natural place
    * for public pages like /login.
    */
-  shellRoutes?: (parentRoute: AnyRoute) => AnyRoute[];
+  shellRoutes?: () => RouteObject[];
 
   /**
    * Additional React providers to wrap around the app tree.
@@ -162,7 +163,7 @@ export function createRegistry<
     register(module) {
       if (resolved) {
         throw new Error(
-          "[@tanstack-react-modules/runtime] Cannot register modules after resolve() has been called.",
+          "[@react-router-modules/runtime] Cannot register modules after resolve() has been called.",
         );
       }
       modules.push(module);
@@ -171,7 +172,7 @@ export function createRegistry<
     registerLazy(descriptor) {
       if (resolved) {
         throw new Error(
-          "[@tanstack-react-modules/runtime] Cannot register modules after resolve() has been called.",
+          "[@react-router-modules/runtime] Cannot register modules after resolve() has been called.",
         );
       }
       lazyModules.push(descriptor);
@@ -179,7 +180,7 @@ export function createRegistry<
 
     resolve(options?: ResolveOptions) {
       if (resolved) {
-        throw new Error("[@tanstack-react-modules/runtime] resolve() can only be called once.");
+        throw new Error("[@react-router-modules/runtime] resolve() can only be called once.");
       }
       resolved = true;
 
@@ -201,17 +202,15 @@ export function createRegistry<
         rootComponent: options?.rootComponent,
         indexComponent: options?.indexComponent,
         notFoundComponent: options?.notFoundComponent,
-        beforeLoad: options?.beforeLoad,
+        loader: options?.loader,
         authenticatedRoute: options?.authenticatedRoute,
         shellRoutes: options?.shellRoutes,
       };
-      const routeTree = buildRouteTree(mods, lazyMods, routeBuilderOptions);
+      const routes = buildRouteTree(mods, lazyMods, routeBuilderOptions);
 
-      // Create TanStack Router instance
-      const router = createRouter({
-        routeTree,
-        defaultPreload: "intent",
-      });
+      // Create React Router instance (use memory router when DOM is unavailable, e.g. tests)
+      const router =
+        typeof document !== "undefined" ? createBrowserRouter(routes) : createMemoryRouter(routes);
 
       // Build navigation, slots, and module entries
       const navigation: NavigationManifest = buildNavigationManifest(mods);

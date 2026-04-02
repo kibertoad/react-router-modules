@@ -27,10 +27,10 @@ jobs:
           ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
         run: |
           declare -A PATH_TO_NAME=(
-            ["packages/core"]="@tanstack-react-modules/core"
-            ["packages/runtime"]="@tanstack-react-modules/runtime"
-            ["packages/testing"]="@tanstack-react-modules/testing"
-            ["packages/cli"]="@tanstack-react-modules/cli"
+            ["packages/core"]="@react-router-modules/core"
+            ["packages/runtime"]="@react-router-modules/runtime"
+            ["packages/testing"]="@react-router-modules/testing"
+            ["packages/cli"]="@react-router-modules/cli"
           )
 
           PACKAGES=()
