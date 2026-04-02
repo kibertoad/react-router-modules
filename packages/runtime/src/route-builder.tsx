@@ -89,7 +89,9 @@ export function buildRouteTree(
     }
 
     if (options?.authenticatedRoute) {
-      rootChildren.push(createAuthenticatedLayoutRoute(options.authenticatedRoute, protectedChildren));
+      rootChildren.push(
+        createAuthenticatedLayoutRoute(options.authenticatedRoute, protectedChildren),
+      );
     } else {
       rootChildren.push(...protectedChildren);
     }
@@ -129,7 +131,9 @@ export function buildRouteTree(
   }
 
   if (options?.authenticatedRoute) {
-    rootChildren.push(createAuthenticatedLayoutRoute(options.authenticatedRoute, protectedChildren));
+    rootChildren.push(
+      createAuthenticatedLayoutRoute(options.authenticatedRoute, protectedChildren),
+    );
   } else {
     rootChildren.push(...protectedChildren);
   }

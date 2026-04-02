@@ -132,9 +132,7 @@ export function createSharedHooks<TSharedDependencies extends Record<string, any
     if (!rs) {
       const hint = suggestHook(key, ctx);
       if (hint) {
-        throw new Error(
-          `[@react-router-modules/core] "${key}" is not a reactive service. ${hint}`,
-        );
+        throw new Error(`[@react-router-modules/core] "${key}" is not a reactive service. ${hint}`);
       }
       throw new Error(
         `[@react-router-modules/core] "${key}" is not registered. ` +

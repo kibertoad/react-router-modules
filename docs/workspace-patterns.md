@@ -46,7 +46,7 @@ Modules contribute content through five channels:
 | --------------------- | --------------------------------- | ----------------------------------------------- |
 | Navigation items      | `navigation` on module descriptor | Mode rail links, sidebar items                  |
 | Global contributions  | `slots` on module descriptor      | Command palette entries, tab type registrations |
-| Route-specific panels | `handle` on routes (zones)    | Detail panel for a route-based page             |
+| Route-specific panels | `handle` on routes (zones)        | Detail panel for a route-based page             |
 | Tab-active panels     | `zones` on module descriptor      | Contextual panel when a module tab is active    |
 | Runtime state         | Shared Zustand stores             | Active tab, session state, panel visibility     |
 
@@ -495,7 +495,7 @@ Zones are reactive — they re-derive on every route change and tab switch. Ther
 | Module identity and catalog metadata | Modules  | `meta` on descriptor → `useModules()`                         |
 | Module renderable component          | Modules  | `component` on descriptor → `useModules()`                    |
 | Tab-active contextual panels         | Modules  | `zones` on descriptor → `useActiveZones()`                    |
-| Route-specific panels/actions        | Modules  | `handle` on routes → `useActiveZones()`                   |
+| Route-specific panels/actions        | Modules  | `handle` on routes → `useActiveZones()`                       |
 | Navigation items                     | Modules  | `navigation` on descriptor                                    |
 | Command palette entries              | Modules  | `slots.commands`                                              |
 | Directory page                       | Shell    | Reads `useModules()`, filters by `meta`                       |

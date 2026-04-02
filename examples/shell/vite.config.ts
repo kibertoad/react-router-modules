@@ -5,6 +5,13 @@ import babel from "@rolldown/plugin-babel";
 export default defineConfig({
   plugins: [react(), babel({ presets: [reactCompilerPreset()] })],
   resolve: {
-    dedupe: ["react", "react-dom", "react/jsx-runtime", "react-router", "@tanstack/react-query", "zustand"],
+    dedupe: [
+      "react",
+      "react-dom",
+      "react/jsx-runtime",
+      "react-router",
+      "@tanstack/react-query",
+      "zustand",
+    ],
   },
 });

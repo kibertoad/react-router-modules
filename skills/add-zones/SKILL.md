@@ -260,12 +260,12 @@ function ToolbarActions() {
 }
 ```
 
-**Why not dynamically set zone values to `undefined`?** Zones are static declarations on routes and module descriptors — they describe what a route *can* contribute, not what's currently shown. Mixing visibility state into zone values would mean routes need runtime logic in `handle`, which is meant to be static. Keep the two concerns separate:
+**Why not dynamically set zone values to `undefined`?** Zones are static declarations on routes and module descriptors — they describe what a route _can_ contribute, not what's currently shown. Mixing visibility state into zone values would mean routes need runtime logic in `handle`, which is meant to be static. Keep the two concerns separate:
 
-| Concern    | Mechanism                        | Changes when…                 |
-| ---------- | -------------------------------- | ----------------------------- |
-| Zone content | `handle` / descriptor `zones` | Route or active tab changes |
-| Zone visibility | Zustand store / React state    | User clicks a button        |
+| Concern         | Mechanism                     | Changes when…               |
+| --------------- | ----------------------------- | --------------------------- |
+| Zone content    | `handle` / descriptor `zones` | Route or active tab changes |
+| Zone visibility | Zustand store / React state   | User clicks a button        |
 
 ## Rules
 

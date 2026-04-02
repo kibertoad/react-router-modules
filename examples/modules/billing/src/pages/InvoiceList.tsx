@@ -53,9 +53,7 @@ export default function InvoiceList() {
           {invoices?.map((inv) => (
             <tr key={inv.id}>
               <td style={{ padding: "0.5rem", borderBottom: "1px solid #eee" }}>
-                <Link to={`/billing/invoices/${inv.id}`}>
-                  {inv.id}
-                </Link>
+                <Link to={`/billing/invoices/${inv.id}`}>{inv.id}</Link>
               </td>
               <td style={{ padding: "0.5rem", borderBottom: "1px solid #eee" }}>
                 ${inv.amount.toFixed(2)}

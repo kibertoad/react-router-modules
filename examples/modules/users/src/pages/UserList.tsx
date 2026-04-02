@@ -30,9 +30,7 @@ export default function UserList() {
       <ul style={{ listStyle: "none", padding: 0 }}>
         {users?.map((user) => (
           <li key={user.id} style={{ padding: "0.5rem 0", borderBottom: "1px solid #eee" }}>
-            <Link to={`/users/${user.id}`}>
-              {user.name}
-            </Link>{" "}
+            <Link to={`/users/${user.id}`}>{user.name}</Link>{" "}
             <span style={{ color: "#888", fontSize: "0.875rem" }}>({user.email})</span>
           </li>
         ))}

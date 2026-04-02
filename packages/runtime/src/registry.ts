@@ -210,9 +210,7 @@ export function createRegistry<
 
       // Create React Router instance (use memory router when DOM is unavailable, e.g. tests)
       const router =
-        typeof document !== "undefined"
-          ? createBrowserRouter(routes)
-          : createMemoryRouter(routes);
+        typeof document !== "undefined" ? createBrowserRouter(routes) : createMemoryRouter(routes);
 
       // Build navigation, slots, and module entries
       const navigation: NavigationManifest = buildNavigationManifest(mods);

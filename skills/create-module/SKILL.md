@@ -87,7 +87,7 @@ export default defineModule<AppDependencies>({
       children: [
         {
           index: true,
-          lazy: () => import("./pages/<PageName>.js").then(m => ({ Component: m.default })),
+          lazy: () => import("./pages/<PageName>.js").then((m) => ({ Component: m.default })),
         },
       ],
     },

@@ -127,16 +127,16 @@ Note that the framework does **not** solve independent deployment. Modules are c
 
 ### What maps to what on screen
 
-| Framework entity              | What the user sees                                                                                  |
-| ----------------------------- | --------------------------------------------------------------------------------------------------- |
-| **Shell**                     | The persistent chrome: top bar, sidebar, footer. Always visible.                                    |
+| Framework entity              | What the user sees                                                                                                                                                                                                                                                                                     |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Shell**                     | The persistent chrome: top bar, sidebar, footer. Always visible.                                                                                                                                                                                                                                       |
 | **Module**                    | A feature area. In route-based apps, a set of pages (`/billing/*`). In workspace apps, a unit of content the shell renders — typically in a tab, but could be a panel, drawer, or any shell-managed content area. The module's content can have its own internal navigation (sub-tabs, wizards, etc.). |
-| **Route** (`createRoutes`)    | A page within a module. URL changes, content area updates.                                          |
-| **Component** (on descriptor) | A module's UI rendered by the shell in a tab, panel, or modal — not tied to a URL.                  |
-| **Zone**                      | A named layout region (sidebar, header actions, detail panel) whose content changes per page or tab. |
-| **Slot**                      | A global collection rendered once (command palette entries, badge counts). All modules contribute.   |
-| **Navigation item**           | A link in the sidebar or mode rail.                                                                 |
-| **Shared dependency**         | Invisible. Services and stores modules consume (auth, HTTP client) — no direct UI.                  |
+| **Route** (`createRoutes`)    | A page within a module. URL changes, content area updates.                                                                                                                                                                                                                                             |
+| **Component** (on descriptor) | A module's UI rendered by the shell in a tab, panel, or modal — not tied to a URL.                                                                                                                                                                                                                     |
+| **Zone**                      | A named layout region (sidebar, header actions, detail panel) whose content changes per page or tab.                                                                                                                                                                                                   |
+| **Slot**                      | A global collection rendered once (command palette entries, badge counts). All modules contribute.                                                                                                                                                                                                     |
+| **Navigation item**           | A link in the sidebar or mode rail.                                                                                                                                                                                                                                                                    |
+| **Shared dependency**         | Invisible. Services and stores modules consume (auth, HTTP client) — no direct UI.                                                                                                                                                                                                                     |
 
 A single module can use routes, zones, slots, and navigation together. A billing module might own `/billing/*` routes, contribute a detail panel zone on its invoice page, add commands to the command palette via slots, and show a "Billing" link in the sidebar via navigation.
 
@@ -309,15 +309,15 @@ export default defineModule<AppDependencies>({
       children: [
         {
           index: true,
-          lazy: () => import("./pages/BillingDashboard.js").then(m => ({ Component: m.default })),
+          lazy: () => import("./pages/BillingDashboard.js").then((m) => ({ Component: m.default })),
         },
         {
           path: "invoices",
-          lazy: () => import("./pages/InvoiceList.js").then(m => ({ Component: m.default })),
+          lazy: () => import("./pages/InvoiceList.js").then((m) => ({ Component: m.default })),
         },
         {
           path: "invoices/:invoiceId",
-          lazy: () => import("./pages/InvoiceDetail.js").then(m => ({ Component: m.default })),
+          lazy: () => import("./pages/InvoiceDetail.js").then((m) => ({ Component: m.default })),
         },
       ],
     },
@@ -338,7 +338,7 @@ export default defineModule<AppDependencies>({
 | -------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `id`           | Yes      | Unique string identifier. Must be unique across all registered modules.                                                                              |
 | `version`      | Yes      | SemVer version string.                                                                                                                               |
-| `createRoutes` | No       | Returns an array of React Router `RouteObject` entries. Use `lazy` for code splitting.                                                           |
+| `createRoutes` | No       | Returns an array of React Router `RouteObject` entries. Use `lazy` for code splitting.                                                               |
 | `component`    | No       | A React component the shell can render outside of routes - in a tab, modal, or panel. Use for workspace apps where the shell orchestrates rendering. |
 | `meta`         | No       | Catalog metadata for discovery UIs. Accepts a `TMeta` generic for type safety - see [Module Catalog](#module-catalog).                               |
 | `navigation`   | No       | Array of `NavigationItem` entries contributed to the shell's sidebar/nav.                                                                            |
@@ -683,7 +683,14 @@ import babel from "@rolldown/plugin-babel";
 export default defineConfig({
   plugins: [react(), babel({ presets: [reactCompilerPreset()] })],
   resolve: {
-    dedupe: ["react", "react-dom", "react/jsx-runtime", "react-router", "@tanstack/react-query", "zustand"],
+    dedupe: [
+      "react",
+      "react-dom",
+      "react/jsx-runtime",
+      "react-router",
+      "@tanstack/react-query",
+      "zustand",
+    ],
   },
 });
 ```
@@ -1182,14 +1189,14 @@ function WorkspaceTab({ moduleId, context }: { moduleId: string; context: unknow
 
 ### When to use meta vs navigation vs slots vs commands
 
-| Data                                                  | Mechanism            | Why                                                             |
-| ----------------------------------------------------- | -------------------- | --------------------------------------------------------------- |
-| Sidebar links                                         | `navigation`         | Framework builds NavigationManifest with grouping/sorting       |
-| Module-specific self-executing actions                | `slots.commands`     | "Create Invoice", "Export Report" - the module owns the handler |
-| Tab types, badges, other aggregated data              | `slots`              | Aggregated arrays from all modules                              |
-| Module identity for directory/catalog/command palette | `meta`               | Per-module descriptive data for discovery UIs                   |
-| Route-specific panel/header content                   | `handle` (zones) | Changes per route within a module                               |
-| Tab-active panel/header content                       | Descriptor `zones`   | Shown when the module's tab is active                           |
+| Data                                                  | Mechanism          | Why                                                             |
+| ----------------------------------------------------- | ------------------ | --------------------------------------------------------------- |
+| Sidebar links                                         | `navigation`       | Framework builds NavigationManifest with grouping/sorting       |
+| Module-specific self-executing actions                | `slots.commands`   | "Create Invoice", "Export Report" - the module owns the handler |
+| Tab types, badges, other aggregated data              | `slots`            | Aggregated arrays from all modules                              |
+| Module identity for directory/catalog/command palette | `meta`             | Per-module descriptive data for discovery UIs                   |
+| Route-specific panel/header content                   | `handle` (zones)   | Changes per route within a module                               |
+| Tab-active panel/header content                       | Descriptor `zones` | Shown when the module's tab is active                           |
 
 **Key rule:** Every command must have an `onSelect` handler - the module owns its actions. Don't use `slots.commands` for things the shell handles: journey launching comes from `meta` (discovered via `useModules()`), navigation comes from `navigation` entries, and system launching comes from domain-specific slots. If the module can't execute the action itself, it belongs in a different mechanism.
 
@@ -1584,8 +1591,8 @@ react-router-modules/
 
 ### Framework packages
 
-| Package                           | Purpose                                                                                   | Size           |
-| --------------------------------- | ----------------------------------------------------------------------------------------- | -------------- |
+| Package                         | Purpose                                                                                   | Size           |
+| ------------------------------- | ----------------------------------------------------------------------------------------- | -------------- |
 | `@react-router-modules/core`    | Module types, `defineModule()`, `createSharedHooks()`                                     | ~1 KB          |
 | `@react-router-modules/runtime` | `createRegistry()`, route composition, validation, navigation manifest, `useNavigation()` | ~5.6 KB        |
 | `@react-router-modules/testing` | `renderModule()`, `createMockStore()`                                                     | ~1 KB          |
@@ -1770,7 +1777,7 @@ npx playwright test
 | `buildSlotsManifest(modules, defaults?)` | Function  | Concatenates slot contributions from multiple modules. Used internally and by testing.        |
 | `useNavigation()`                        | Hook      | Access the navigation manifest from any component inside `<App />`.                           |
 | `useSlots<S>()`                          | Hook      | Access collected slot contributions from all modules.                                         |
-| `useZones<Z>()`                          | Hook      | Access zone components from the currently matched route's `handle`.                       |
+| `useZones<Z>()`                          | Hook      | Access zone components from the currently matched route's `handle`.                           |
 | `useActiveZones<Z>(moduleId?)`           | Hook      | Merge route zones with the active module's descriptor zones. Module wins for same key.        |
 | `useModules()`                           | Hook      | Access registered module summaries (id, version, meta, component).                            |
 | `getModuleMeta<T>(entry)`                | Function  | Type-safe accessor for module metadata. Returns `T \| undefined`.                             |

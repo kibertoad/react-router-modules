@@ -13,9 +13,16 @@ When using workspace modules, you **must** configure Vite's `resolve.dedupe` in 
 export default defineConfig({
   // ...plugins
   resolve: {
-    dedupe: ['react', 'react-dom', 'react/jsx-runtime', 'react-router', '@tanstack/react-query', 'zustand'],
+    dedupe: [
+      "react",
+      "react-dom",
+      "react/jsx-runtime",
+      "react-router",
+      "@tanstack/react-query",
+      "zustand",
+    ],
   },
-})
+});
 ```
 
 The CLI's `reactive init` command generates this configuration automatically.
@@ -68,12 +75,12 @@ export function Layout() {
 
 ### Which mechanism for which zone
 
-| Zone content                                                        | Source                                                            |
-| ------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| Navigation links and mode switches                                  | `useNavigation()` - modules declare `navigation` items            |
-| Commands, badges, aggregated contributions                          | `useSlots()` - modules declare `slots` contributions              |
-| Route-specific UI for layout regions (detail panel, header actions) | `useZones()` - active route declares `handle`                 |
-| Active selection, panel visibility                                  | Shared Zustand store - runtime state                              |
+| Zone content                                                        | Source                                                         |
+| ------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Navigation links and mode switches                                  | `useNavigation()` - modules declare `navigation` items         |
+| Commands, badges, aggregated contributions                          | `useSlots()` - modules declare `slots` contributions           |
+| Route-specific UI for layout regions (detail panel, header actions) | `useZones()` - active route declares `handle`                  |
+| Active selection, panel visibility                                  | Shared Zustand store - runtime state                           |
 | Route-based page content                                            | `<Outlet />` - React Router renders the active module's routes |
 
 ## Command Palette Pattern
@@ -365,7 +372,7 @@ Deeper routes override shallower ones. A billing section root can set a default 
 | Question                                           | Answer                                                                   |
 | -------------------------------------------------- | ------------------------------------------------------------------------ |
 | Is it known at module registration time?           | Slots                                                                    |
-| Does it vary per route within a module?            | Route zones (`handle`)                                               |
+| Does it vary per route within a module?            | Route zones (`handle`)                                                   |
 | Does it change at runtime?                         | Shared store                                                             |
 | Is it an external source you subscribe to?         | Reactive service (`useReactiveService`)                                  |
 | Does it come from an API?                          | React Query                                                              |

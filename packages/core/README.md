@@ -20,7 +20,10 @@ export default defineModule<AppDependencies, AppSlots>({
     {
       path: "billing",
       children: [
-        { index: true, lazy: () => import("./pages/BillingDashboard.js").then(m => ({ Component: m.default })) },
+        {
+          index: true,
+          lazy: () => import("./pages/BillingDashboard.js").then((m) => ({ Component: m.default })),
+        },
       ],
     },
   ],
