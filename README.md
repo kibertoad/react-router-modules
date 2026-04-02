@@ -672,6 +672,8 @@ export const httpClient = wretch().defer((w) => {
 
 See the [React Compiler](#react-compiler) section for details on why and how to enable it.
 
+**Important:** When using workspace modules, Vite's `resolve.dedupe` is **mandatory** to prevent duplicate copies of shared libraries. Without it, each module may bundle its own copy of React, React Router, or Zustand, causing context mismatches, hook failures, and other subtle runtime errors.
+
 ```typescript
 // vite.config.ts
 import { defineConfig } from "vite";
@@ -680,6 +682,9 @@ import babel from "@rolldown/plugin-babel";
 
 export default defineConfig({
   plugins: [react(), babel({ presets: [reactCompilerPreset()] })],
+  resolve: {
+    dedupe: ["react", "react-dom", "react/jsx-runtime", "react-router", "@tanstack/react-query", "zustand"],
+  },
 });
 ```
 

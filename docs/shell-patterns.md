@@ -4,6 +4,22 @@ This guide covers patterns for building shell applications with the reactive fra
 
 > **Building a workspace-style app** (tabbed workspaces, component-only modules, per-session state)? See [Workspace Patterns](workspace-patterns.md) after reading this guide - it builds on the foundation covered here.
 
+## Vite Dependency Deduplication (Required)
+
+When using workspace modules, you **must** configure Vite's `resolve.dedupe` in the shell's `vite.config.ts` to prevent duplicate copies of shared libraries. Without it, each module may bundle its own copy of React, React Router, or Zustand, causing context mismatches, hook failures, and other subtle runtime errors.
+
+```typescript
+// shell/vite.config.ts
+export default defineConfig({
+  // ...plugins
+  resolve: {
+    dedupe: ['react', 'react-dom', 'react/jsx-runtime', 'react-router', '@tanstack/react-query', 'zustand'],
+  },
+})
+```
+
+The CLI's `reactive init` command generates this configuration automatically.
+
 ## Multi-Zone Shell Layout
 
 A basic shell has a sidebar and a content area. A complex shell has multiple zones - a mode rail, a customer banner, a main content area, a contextual panel.
