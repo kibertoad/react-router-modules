@@ -2,7 +2,7 @@
   "name": "react-router-modules",
   "version": "1.0.0",
   "private": true,
-  "description": "Modular React framework for building composable frontend systems with TanStack Router and zustand.",
+  "description": "Modular React framework for building composable frontend systems with React Router and zustand.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/kibertoad/tanstack-react-modules.git"
@@ -11,7 +11,7 @@
     "build": "pnpm -r run build",
     "example:dev": "pnpm --filter shell dev",
     "test": "vitest run",
-    "test:e2e": "pnpm --filter @tanstack-react-modules/cli test:e2e",
+    "test:e2e": "pnpm --filter @react-router-modules/cli test:e2e",
     "typecheck": "tsc --build",
     "lint": "tsc && oxfmt --check . && oxlint .",
     "lint:fix": "oxfmt --write . && oxlint --fix ."

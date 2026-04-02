@@ -1,4 +1,4 @@
-import type { ZoneMapOf } from "@tanstack-react-modules/core";
+import type { ZoneMapOf } from "@react-router-modules/core";
 import { useZones } from "./zones.js";
 import { useModules } from "./modules-context.js";
 
@@ -7,7 +7,7 @@ import { useModules } from "./modules-context.js";
  * currently active module (identified by `activeModuleId`).
  *
  * This unifies two zone contribution patterns:
- * - **Route-based modules** contribute zones via TanStack Router's `staticData`
+ * - **Route-based modules** contribute zones via React Router's `handle`
  * - **Tab-based modules** contribute zones via the `zones` field on their descriptor
  *
  * When both sources provide a value for the same zone key, the module's

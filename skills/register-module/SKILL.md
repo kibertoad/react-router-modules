@@ -69,7 +69,7 @@ When `registry.resolve()` runs, it validates:
 If validation fails, the error message tells you exactly what's missing:
 
 ```
-[@tanstack-react-modules/runtime] Module "billing" requires dependencies not provided
+[@react-router-modules/runtime] Module "billing" requires dependencies not provided
 by the registry: analytics. Available: auth, config, httpClient
 ```
 

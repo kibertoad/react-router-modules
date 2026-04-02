@@ -1,10 +1,10 @@
-import { useMatches } from "@tanstack/react-router";
-import type { ZoneMapOf } from "@tanstack-react-modules/core";
+import { useMatches } from "react-router";
+import type { ZoneMapOf } from "@react-router-modules/core";
 
 /**
  * Read zone components contributed by the currently matched route hierarchy.
  *
- * Zones are set via TanStack Router's `staticData` on individual routes.
+ * Zones are set via React Router's `handle` on individual routes.
  * This hook walks all matched routes from root to leaf and returns a merged
  * map where the deepest match wins for each zone key.
  *
@@ -22,20 +22,19 @@ import type { ZoneMapOf } from "@tanstack-react-modules/core";
  *
  * @example
  * // In a module's route definition:
- * const userDetail = createRoute({
- *   getParentRoute: () => usersRoot,
- *   path: '$userId',
- *   component: UserDetailPage,
- *   staticData: {
+ * {
+ *   path: ':userId',
+ *   Component: UserDetailPage,
+ *   handle: {
  *     detailPanel: UserDetailSidebar,
  *   },
- * })
+ * }
  */
 export function useZones<TZones extends ZoneMapOf<TZones>>(): Partial<TZones> {
   const matches = useMatches();
   const merged: Record<string, unknown> = {};
   for (const match of matches) {
-    const data = (match as any).staticData;
+    const data = (match as any).handle;
     if (data && typeof data === "object") {
       for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
         if (value !== undefined) {

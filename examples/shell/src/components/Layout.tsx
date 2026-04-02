@@ -1,5 +1,5 @@
-import { Outlet } from "@tanstack/react-router";
-import { useZones } from "@tanstack-react-modules/runtime";
+import { Outlet } from "react-router";
+import { useZones } from "@react-router-modules/runtime";
 import { useStore } from "@example/app-shared";
 import type { AppZones } from "@example/app-shared";
 import { Sidebar } from "./Sidebar.js";

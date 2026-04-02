@@ -1,8 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { createRegistry } from "./registry.js";
 import { createStore } from "zustand/vanilla";
-import { createRoute } from "@tanstack/react-router";
-import type { AnyRoute } from "@tanstack/react-router";
+import type { RouteObject } from "react-router";
 
 interface TestDeps {
   auth: { user: string | null };
@@ -97,8 +96,7 @@ describe("module entries", () => {
       version: "1.0.0",
       meta: { name: "Full Module" },
       component: DummyComponent,
-      createRoutes: (parent: AnyRoute) =>
-        createRoute({ getParentRoute: () => parent, path: "/full", component: () => <></> }),
+      createRoutes: (): RouteObject => ({ path: "full", Component: () => <></> }),
       navigation: [{ label: "Full", to: "/full" }],
     });
 

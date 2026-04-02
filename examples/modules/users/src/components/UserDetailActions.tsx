@@ -1,7 +1,7 @@
-import { useParams } from "@tanstack/react-router";
+import { useParams } from "react-router";
 
 export function UserDetailActions() {
-  const { userId } = useParams({ strict: false }) as { userId: string };
+  const { userId } = useParams() as { userId: string };
 
   return (
     <div style={{ display: "flex", gap: "0.5rem" }}>

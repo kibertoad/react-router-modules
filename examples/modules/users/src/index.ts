@@ -1,5 +1,5 @@
-import { defineModule } from "@tanstack-react-modules/core";
-import { createRoute, lazyRouteComponent } from "@tanstack/react-router";
+import { defineModule } from "@react-router-modules/core";
+import type { RouteObject } from "react-router";
 import type { AppDependencies, AppSlots } from "@example/app-shared";
 import { UserDetailActions } from "./components/UserDetailActions.js";
 import { UserDetailPanel } from "./components/UserDetailPanel.js";
@@ -15,30 +15,23 @@ export default defineModule<AppDependencies, AppSlots>({
     category: "admin",
   },
 
-  createRoutes: (parentRoute) => {
-    const usersRoot = createRoute({
-      getParentRoute: () => parentRoute,
-      path: "users",
-    });
-
-    const userList = createRoute({
-      getParentRoute: () => usersRoot,
-      path: "/",
-      component: lazyRouteComponent(() => import("./pages/UserList.js")),
-    });
-
-    const userDetail = createRoute({
-      getParentRoute: () => usersRoot,
-      path: "$userId",
-      component: lazyRouteComponent(() => import("./pages/UserDetail.js")),
-      staticData: {
-        headerActions: UserDetailActions,
-        detailPanel: UserDetailPanel,
+  createRoutes: (): RouteObject => ({
+    path: "users",
+    children: [
+      {
+        index: true,
+        lazy: () => import("./pages/UserList.js").then((m) => ({ Component: m.default })),
       },
-    });
-
-    return usersRoot.addChildren([userList, userDetail]);
-  },
+      {
+        path: ":userId",
+        handle: {
+          headerActions: UserDetailActions,
+          detailPanel: UserDetailPanel,
+        },
+        lazy: () => import("./pages/UserDetail.js").then((m) => ({ Component: m.default })),
+      },
+    ],
+  }),
 
   navigation: [{ label: "Users", to: "/users", icon: "users", group: "admin", order: 20 }],
 

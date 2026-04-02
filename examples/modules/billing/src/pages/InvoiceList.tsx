@@ -1,7 +1,7 @@
 import { useStore, useService, listInvoicesContract } from "@example/app-shared";
 import { sendByContract } from "@lokalise/frontend-http-client";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link } from "react-router";
 
 export default function InvoiceList() {
   const isAuthenticated = useStore("auth", (s) => s.isAuthenticated);
@@ -53,7 +53,7 @@ export default function InvoiceList() {
           {invoices?.map((inv) => (
             <tr key={inv.id}>
               <td style={{ padding: "0.5rem", borderBottom: "1px solid #eee" }}>
-                <Link to="/billing/invoices/$invoiceId" params={{ invoiceId: inv.id }}>
+                <Link to={`/billing/invoices/${inv.id}`}>
                   {inv.id}
                 </Link>
               </td>

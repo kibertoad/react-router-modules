@@ -1,15 +1,14 @@
-import { RouterProvider } from "@tanstack/react-router";
-import type { Router } from "@tanstack/react-router";
+import { RouterProvider } from "react-router";
 import type { StoreApi } from "zustand";
-import type { ReactiveService } from "@tanstack-react-modules/core";
-import { SharedDependenciesContext } from "@tanstack-react-modules/core";
+import type { ReactiveService } from "@react-router-modules/core";
+import { SharedDependenciesContext } from "@react-router-modules/core";
 import { NavigationContext } from "./navigation-context.js";
 import { SlotsContext } from "./slots-context.js";
 import { ModulesContext } from "./modules-context.js";
 import type { NavigationManifest, ModuleEntry } from "./types.js";
 
 interface AppProps {
-  router: Router<any, any, any>;
+  router: any;
   stores: Record<string, StoreApi<unknown>>;
   services: Record<string, unknown>;
   reactiveServices: Record<string, ReactiveService<unknown>>;

@@ -1,4 +1,4 @@
-import { useModules } from "@tanstack-react-modules/runtime";
+import { useModules } from "@react-router-modules/runtime";
 import { useStore } from "@example/app-shared";
 
 export function Home() {

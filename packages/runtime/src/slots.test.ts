@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildSlotsManifest } from "./slots.js";
-import type { ReactiveModuleDescriptor } from "@tanstack-react-modules/core";
-import type { AnyRoute } from "@tanstack/react-router";
+import type { ReactiveModuleDescriptor } from "@react-router-modules/core";
 
 // Plain interface — no index signature or SlotMap extends needed
 interface TestSlots {
@@ -15,7 +14,6 @@ function fakeModule(
   return {
     id: overrides.id ?? "test",
     version: "0.1.0",
-    createRoutes: (parent: AnyRoute) => parent,
     ...overrides,
   };
 }

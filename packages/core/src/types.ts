@@ -1,4 +1,4 @@
-import type { AnyRoute } from "@tanstack/react-router";
+import type { RouteObject } from "react-router";
 
 /**
  * A reactive external source that components can subscribe to.
@@ -62,8 +62,8 @@ export type SlotMapOf<T> = { [K in keyof T]: readonly unknown[] };
  * components should render in named layout regions of the shell.
  *
  * Unlike SlotMap (arrays concatenated across all modules), ZoneMap values are
- * single components contributed by the currently matched route via TanStack
- * Router's `staticData`.
+ * single components contributed by the currently matched route via React
+ * Router's `handle`.
  */
 export type ZoneMap = Record<string, React.ComponentType<any> | undefined>;
 
@@ -102,13 +102,12 @@ export interface ReactiveModuleDescriptor<
   readonly version: string;
 
   /**
-   * Receives a parent route and returns the module's route subtree.
-   * Uses TanStack Router's createRoute directly.
+   * Returns the module's route subtree as React Router RouteObject(s).
    *
    * Optional — omit for "headless" modules that contribute only
    * via slots, navigation, and lifecycle hooks without owning routes.
    */
-  readonly createRoutes?: (parentRoute: AnyRoute) => AnyRoute;
+  readonly createRoutes?: () => RouteObject | RouteObject[];
 
   /** Navigation items this module contributes to the app shell */
   readonly navigation?: readonly NavigationItem[];
@@ -139,7 +138,7 @@ export interface ReactiveModuleDescriptor<
    * Values are React components rendered by the shell in the corresponding
    * layout region.
    *
-   * Route-based modules use `staticData` on their routes instead.
+   * Route-based modules use `handle` on their routes instead.
    */
   readonly zones?: Readonly<Record<string, React.ComponentType<any>>>;
 

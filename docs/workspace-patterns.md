@@ -46,7 +46,7 @@ Modules contribute content through five channels:
 | --------------------- | --------------------------------- | ----------------------------------------------- |
 | Navigation items      | `navigation` on module descriptor | Mode rail links, sidebar items                  |
 | Global contributions  | `slots` on module descriptor      | Command palette entries, tab type registrations |
-| Route-specific panels | `staticData` on routes (zones)    | Detail panel for a route-based page             |
+| Route-specific panels | `handle` on routes (zones)    | Detail panel for a route-based page             |
 | Tab-active panels     | `zones` on module descriptor      | Contextual panel when a module tab is active    |
 | Runtime state         | Shared Zustand stores             | Active tab, session state, panel visibility     |
 
@@ -54,7 +54,7 @@ Modules contribute content through five channels:
 
 ```typescript
 // app-shared/src/index.ts
-import { createSharedHooks } from "@tanstack-react-modules/core";
+import { createSharedHooks } from "@react-router-modules/core";
 import type { ComponentType } from "react";
 
 // ---- Zones (layout regions that change per active content) ----
@@ -64,9 +64,9 @@ export interface AppZones {
   headerActions?: ComponentType;
 }
 
-// Type-safe staticData for route-based modules
-declare module "@tanstack/router-core" {
-  interface StaticDataRouteOption extends AppZones {}
+// Type-safe handle for route-based modules
+declare module "react-router" {
+  interface HandleRouteOption extends AppZones {}
 }
 
 // ---- Slots (global contributions from all modules) ----
@@ -194,7 +194,7 @@ Workspace modules use `component` instead of `createRoutes`. The shell renders t
 
 ```typescript
 // modules/onboarding-flow/src/index.ts
-import { defineModule } from "@tanstack-react-modules/core";
+import { defineModule } from "@react-router-modules/core";
 import { lazy } from "react";
 import { OnboardingPanel } from "./OnboardingPanel.js";
 
@@ -239,7 +239,7 @@ export interface WorkflowProps {
 
 ## Step 4: Descriptor zones and useActiveZones
 
-Tab-based modules can't use `staticData` zones because they're not rendered via routes. Instead, they declare `zones` on the module descriptor:
+Tab-based modules can't use `handle` zones because they're not rendered via routes. Instead, they declare `zones` on the module descriptor:
 
 ```typescript
 zones: {
@@ -251,7 +251,7 @@ zones: {
 The shell reads zones from both routes and the active module using `useActiveZones`:
 
 ```typescript
-import { useActiveZones } from '@tanstack-react-modules/runtime'
+import { useActiveZones } from '@react-router-modules/runtime'
 import type { AppZones } from '@myorg/app-shared'
 
 function ShellLayout() {
@@ -276,7 +276,7 @@ function ShellLayout() {
 
 **How `useActiveZones` works:**
 
-1. Collects route zones via `useZones()` (from `staticData` on matched routes)
+1. Collects route zones via `useZones()` (from `handle` on matched routes)
 2. If `activeModuleId` is provided, looks up the module's `zones` field from `useModules()`
 3. Merges both - **module wins** for the same key
 4. When `activeModuleId` is `null`, returns route zones only
@@ -305,7 +305,7 @@ When switching to a tab that has no module (e.g. a directory tab or an iframe ta
 The shell builds a browsable directory of available modules using `useModules()` and `getModuleMeta()`:
 
 ```typescript
-import { useModules, getModuleMeta } from '@tanstack-react-modules/runtime'
+import { useModules, getModuleMeta } from '@react-router-modules/runtime'
 import type { WorkflowMeta } from '@myorg/app-shared'
 
 function DirectoryPage() {
@@ -352,7 +352,7 @@ Category labels fall back to `capitalize(category)` - no hardcoded label map nee
 When a tab is active, the shell looks up the module and renders its `component`:
 
 ```typescript
-import { useModules } from '@tanstack-react-modules/runtime'
+import { useModules } from '@react-router-modules/runtime'
 
 function WorkspaceContent({ activeTab, customerId, accountNumber, sessionId }) {
   const modules = useModules()
@@ -428,7 +428,7 @@ Modules control their own completion behavior via `WorkflowMeta`:
 For apps where each session has independent state, use `createScopedStore`:
 
 ```typescript
-import { createScopedStore } from "@tanstack-react-modules/core";
+import { createScopedStore } from "@react-router-modules/core";
 
 const sessionTabs = createScopedStore<TabState>(() => ({
   tabs: [{ id: "directory", type: "directory", title: "Directory", closeable: false }],
@@ -485,7 +485,7 @@ Zones are reactive — they re-derive on every route change and tab switch. Ther
 
 **Tab switch:** When the user switches from a tab whose module declares `zones: { contextualPanel: BillingPanel }` to a tab whose module declares no zones, `contextualPanel` reverts to whatever the route hierarchy provides — or `undefined` if no route sets it either. This is intentional: the shell always reflects the currently active content, not the previously active content.
 
-**Persistent zones across tabs:** If a zone should always be present regardless of the active tab, set it on a parent layout route via `staticData`. Module descriptor zones override route zones for the same key, so the route value acts as a fallback when the active module doesn't contribute that zone.
+**Persistent zones across tabs:** If a zone should always be present regardless of the active tab, set it on a parent layout route via `handle`. Module descriptor zones override route zones for the same key, so the route value acts as a fallback when the active module doesn't contribute that zone.
 
 ## Summary: what goes where
 
@@ -495,7 +495,7 @@ Zones are reactive — they re-derive on every route change and tab switch. Ther
 | Module identity and catalog metadata | Modules  | `meta` on descriptor → `useModules()`                         |
 | Module renderable component          | Modules  | `component` on descriptor → `useModules()`                    |
 | Tab-active contextual panels         | Modules  | `zones` on descriptor → `useActiveZones()`                    |
-| Route-specific panels/actions        | Modules  | `staticData` on routes → `useActiveZones()`                   |
+| Route-specific panels/actions        | Modules  | `handle` on routes → `useActiveZones()`                   |
 | Navigation items                     | Modules  | `navigation` on descriptor                                    |
 | Command palette entries              | Modules  | `slots.commands`                                              |
 | Directory page                       | Shell    | Reads `useModules()`, filters by `meta`                       |

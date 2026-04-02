@@ -13,19 +13,19 @@ export function modulePackageJson(params: { scope: string; name: string }): stri
         },
       },
       dependencies: {
-        "@tanstack-react-modules/core": "^0.1.0",
+        "@react-router-modules/core": "^0.1.0",
         [`${params.scope}/app-shared`]: "workspace:*",
         "@lokalise/frontend-http-client": "^7.0.0",
       },
       peerDependencies: {
         "@tanstack/react-query": "^5.95.0",
-        "@tanstack/react-router": "^1.120.0",
+        "react-router": "^7.6.0",
         react: "^19.0.0",
         zustand: "^5.0.0",
       },
       devDependencies: {
         "@tanstack/react-query": "^5.95.0",
-        "@tanstack/react-router": "^1.120.0",
+        "react-router": "^7.6.0",
         react: "^19.0.0",
         zustand: "^5.0.0",
         "@types/react": "^19.0.0",
@@ -66,34 +66,27 @@ export function moduleDescriptor(params: {
         `{ label: '${capitalize(params.name)} List', to: '/${params.route}/list', order: 11 }`,
       ];
 
-  return `import { defineModule } from '@tanstack-react-modules/core'
-import { createRoute, lazyRouteComponent } from '@tanstack/react-router'
+  return `import { defineModule } from '@react-router-modules/core'
+import type { RouteObject } from 'react-router'
 import type { AppDependencies, AppSlots } from '${params.scope}/app-shared'
 
 export default defineModule<AppDependencies, AppSlots>({
   id: '${params.name}',
   version: '0.1.0',
 
-  createRoutes: (parentRoute) => {
-    const root = createRoute({
-      getParentRoute: () => parentRoute,
-      path: '${params.route}',
-    })
-
-    const index = createRoute({
-      getParentRoute: () => root,
-      path: '/',
-      component: lazyRouteComponent(() => import('./pages/${params.pageName}.js')),
-    })
-
-    const list = createRoute({
-      getParentRoute: () => root,
-      path: 'list',
-      component: lazyRouteComponent(() => import('./pages/${params.listPageName}.js')),
-    })
-
-    return root.addChildren([index, list])
-  },
+  createRoutes: (): RouteObject => ({
+    path: '${params.route}',
+    children: [
+      {
+        index: true,
+        lazy: () => import('./pages/${params.pageName}.js').then((m) => ({ Component: m.default })),
+      },
+      {
+        path: 'list',
+        lazy: () => import('./pages/${params.listPageName}.js').then((m) => ({ Component: m.default })),
+      },
+    ],
+  }),
 
   navigation: [
     ${navItems.join(",\n    ")},
@@ -111,7 +104,7 @@ export function modulePage(params: {
   moduleName: string;
 }): string {
   return `import { useStore } from '${params.scope}/app-shared'
-import { Link } from '@tanstack/react-router'
+import { Link } from 'react-router'
 
 export default function ${params.pageName}() {
   const user = useStore('auth', (s) => s.user)
@@ -167,7 +160,7 @@ export function moduleTest(params: {
   pageName: string;
 }): string {
   return `import { describe, it, expect } from 'vitest'
-import { renderModule, createMockStore } from '@tanstack-react-modules/testing'
+import { renderModule, createMockStore } from '@react-router-modules/testing'
 import type { AppDependencies } from '${params.scope}/app-shared'
 import ${params.importName} from '../index.js'
 

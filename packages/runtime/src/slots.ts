@@ -1,4 +1,4 @@
-import type { ReactiveModuleDescriptor } from "@tanstack-react-modules/core";
+import type { ReactiveModuleDescriptor } from "@react-router-modules/core";
 
 /**
  * Collects slot contributions from all registered modules.

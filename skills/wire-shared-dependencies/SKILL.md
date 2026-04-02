@@ -178,7 +178,7 @@ export interface AppDependencies {
 
 ```typescript
 // shell/src/services/call-reactive-service.ts
-import type { ReactiveService } from "@tanstack-react-modules/core";
+import type { ReactiveService } from "@react-router-modules/core";
 import type { CallSnapshot } from "@example/app-shared";
 
 // Wrap your external adapter into the ReactiveService contract

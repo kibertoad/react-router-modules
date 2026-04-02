@@ -1,7 +1,7 @@
 import { useStore, useService, listUsersContract } from "@example/app-shared";
 import { sendByContract } from "@lokalise/frontend-http-client";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link } from "react-router";
 
 export default function UserList() {
   const isAuthenticated = useStore("auth", (s) => s.isAuthenticated);
@@ -30,7 +30,7 @@ export default function UserList() {
       <ul style={{ listStyle: "none", padding: 0 }}>
         {users?.map((user) => (
           <li key={user.id} style={{ padding: "0.5rem 0", borderBottom: "1px solid #eee" }}>
-            <Link to="/users/$userId" params={{ userId: user.id }}>
+            <Link to={`/users/${user.id}`}>
               {user.name}
             </Link>{" "}
             <span style={{ color: "#888", fontSize: "0.875rem" }}>({user.email})</span>

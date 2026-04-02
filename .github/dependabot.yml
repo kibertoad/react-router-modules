@@ -20,6 +20,9 @@ updates:
         patterns:
           - "@types/*"
           - "typescript"
+      react-router:
+        patterns:
+          - "react-router"
       tanstack:
         patterns:
           - "@tanstack/*"

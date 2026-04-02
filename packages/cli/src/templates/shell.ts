@@ -11,14 +11,14 @@ export function shellPackageJson(params: { scope: string; moduleName: string }):
         preview: "vite preview",
       },
       dependencies: {
-        "@tanstack-react-modules/core": "^0.1.0",
-        "@tanstack-react-modules/runtime": "^0.1.0",
+        "@react-router-modules/core": "^0.1.0",
+        "@react-router-modules/runtime": "^0.1.0",
         [`${params.scope}/app-shared`]: "workspace:*",
         [`${params.scope}/${params.moduleName}-module`]: "workspace:*",
         "@lokalise/frontend-http-client": "^7.0.0",
         wretch: "^2.11.0",
         "@tanstack/react-query": "^5.95.0",
-        "@tanstack/react-router": "^1.120.0",
+        "react-router": "^7.6.0",
         react: "^19.0.0",
         "react-dom": "^19.0.0",
         zustand: "^5.0.0",
@@ -63,7 +63,7 @@ export default defineConfig({
     babel({ presets: [reactCompilerPreset()] }),
   ],
   resolve: {
-    dedupe: ['react', 'react-dom', 'react/jsx-runtime', '@tanstack/react-router', '@tanstack/react-query', 'zustand'],
+    dedupe: ['react', 'react-dom', 'react/jsx-runtime', 'react-router', '@tanstack/react-query', 'zustand'],
   },
 })
 `;
@@ -95,7 +95,7 @@ export function shellMain(params: {
   importName: string;
 }): string {
   return `import { createRoot } from 'react-dom/client'
-import { createRegistry } from '@tanstack-react-modules/runtime'
+import { createRegistry } from '@react-router-modules/runtime'
 import type { AppDependencies, AppSlots } from '${params.scope}/app-shared'
 import ${params.importName} from '${params.scope}/${params.moduleName}-module'
 import { authStore } from './stores/auth.js'
@@ -187,7 +187,7 @@ export const httpClient = wretch()
 }
 
 export function shellLayout(params: { scope: string }): string {
-  return `import { Outlet } from '@tanstack/react-router'
+  return `import { Outlet } from 'react-router'
 import { useStore } from '${params.scope}/app-shared'
 import { Sidebar } from './Sidebar.js'
 
@@ -252,8 +252,8 @@ export function Layout() {
 }
 
 export function shellSidebar(params: { projectName: string }): string {
-  return `import { Link, useLocation } from '@tanstack/react-router'
-import { useNavigation } from '@tanstack-react-modules/runtime'
+  return `import { Link, useLocation } from 'react-router'
+import { useNavigation } from '@react-router-modules/runtime'
 
 export function Sidebar() {
   const navigation = useNavigation()

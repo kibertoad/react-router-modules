@@ -8,7 +8,7 @@ metadata:
 
 # Create a Reactive Module
 
-A Reactive module is an npm package that exports a `ReactiveModuleDescriptor` via `defineModule()`. It declares its own routes (TanStack Router), navigation items, and shared dependency requirements.
+A Reactive module is an npm package that exports a `ReactiveModuleDescriptor` via `defineModule()`. It declares its own routes (React Router v7), navigation items, and shared dependency requirements.
 
 > **Prefer the CLI:** `reactive create module <name>` automates all steps below including shell wiring. Use manual creation only when the CLI doesn't fit your needs.
 
@@ -40,19 +40,19 @@ examples/modules/<module-name>/
     }
   },
   "dependencies": {
-    "@tanstack-react-modules/core": "^0.1.0",
+    "@react-router-modules/core": "^0.1.0",
     "@example/app-shared": "workspace:*",
     "@lokalise/frontend-http-client": "^7.0.0"
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.95.0",
-    "@tanstack/react-router": "^1.120.0",
+    "react-router": "^7.0.0",
     "react": "^19.0.0",
     "zustand": "^5.0.0"
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.95.0",
-    "@tanstack/react-router": "^1.120.0",
+    "react-router": "^7.0.0",
     "react": "^19.0.0",
     "zustand": "^5.0.0",
     "@types/react": "^19.0.0",
@@ -74,28 +74,24 @@ examples/modules/<module-name>/
 
 ```typescript
 // src/index.ts
-import { defineModule } from "@tanstack-react-modules/core";
-import { createRoute, lazyRouteComponent } from "@tanstack/react-router";
+import { defineModule } from "@react-router-modules/core";
 import type { AppDependencies } from "@example/app-shared";
 
 export default defineModule<AppDependencies>({
   id: "<module-name>",
   version: "0.1.0",
 
-  createRoutes: (parentRoute) => {
-    const root = createRoute({
-      getParentRoute: () => parentRoute,
+  createRoutes: () => [
+    {
       path: "<module-name>",
-    });
-
-    const index = createRoute({
-      getParentRoute: () => root,
-      path: "/",
-      component: lazyRouteComponent(() => import("./pages/<PageName>.js")),
-    });
-
-    return root.addChildren([index]);
-  },
+      children: [
+        {
+          index: true,
+          lazy: () => import("./pages/<PageName>.js").then(m => ({ Component: m.default })),
+        },
+      ],
+    },
+  ],
 
   navigation: [
     {
@@ -131,9 +127,9 @@ export default function <PageName>() {
 
 ## Rules
 
-- Every page component must use `lazyRouteComponent(() => import(...))` for code splitting.
+- Every page component must use `lazy: () => import(...).then(m => ({ Component: m.default }))` for code splitting.
 - The module `id` must be unique across all registered modules.
-- Use `useStore` and `useService` from `@example/app-shared`, never from `@tanstack-react-modules/core` directly.
+- Use `useStore` and `useService` from `@example/app-shared`, never from `@react-router-modules/core` directly.
 - Navigation `to` paths must match the routes defined in `createRoutes`.
 - The `requires` array is validated when `registry.resolve()` is called - missing deps throw an error.
 - Do not import from other modules. Communicate via shared Zustand stores or React Query cache invalidation.

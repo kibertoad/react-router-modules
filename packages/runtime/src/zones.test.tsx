@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
 
-vi.mock("@tanstack/react-router", () => ({
+vi.mock("react-router", () => ({
   useMatches: vi.fn(),
 }));
 
-import { useMatches } from "@tanstack/react-router";
+import { useMatches } from "react-router";
 import type { ComponentType } from "react";
 import { useZones } from "./zones.js";
 
@@ -23,22 +23,22 @@ function PanelB() {
 }
 
 describe("useZones", () => {
-  it("returns empty object when no matches have staticData", () => {
-    mockUseMatches.mockReturnValue([{ staticData: {} }, { staticData: {} }] as any);
+  it("returns empty object when no matches have handle", () => {
+    mockUseMatches.mockReturnValue([{ handle: {} }, { handle: {} }] as any);
     const result = useZones<TestZones>();
     expect(result).toEqual({});
   });
 
   it("returns zone component from matched route", () => {
-    mockUseMatches.mockReturnValue([{ staticData: { detailPanel: PanelA } }] as any);
+    mockUseMatches.mockReturnValue([{ handle: { detailPanel: PanelA } }] as any);
     const result = useZones<TestZones>();
     expect(result.detailPanel).toBe(PanelA);
   });
 
   it("deepest match wins for the same zone key", () => {
     mockUseMatches.mockReturnValue([
-      { staticData: { detailPanel: PanelA } },
-      { staticData: { detailPanel: PanelB } },
+      { handle: { detailPanel: PanelA } },
+      { handle: { detailPanel: PanelB } },
     ] as any);
     const result = useZones<TestZones>();
     expect(result.detailPanel).toBe(PanelB);
@@ -46,8 +46,8 @@ describe("useZones", () => {
 
   it("merges zones across the match hierarchy", () => {
     mockUseMatches.mockReturnValue([
-      { staticData: { headerActions: PanelA } },
-      { staticData: { detailPanel: PanelB } },
+      { handle: { headerActions: PanelA } },
+      { handle: { detailPanel: PanelB } },
     ] as any);
     const result = useZones<TestZones>();
     expect(result.headerActions).toBe(PanelA);
@@ -56,15 +56,15 @@ describe("useZones", () => {
 
   it("skips undefined values so parent zone is preserved", () => {
     mockUseMatches.mockReturnValue([
-      { staticData: { detailPanel: PanelA } },
-      { staticData: { detailPanel: undefined } },
+      { handle: { detailPanel: PanelA } },
+      { handle: { detailPanel: undefined } },
     ] as any);
     const result = useZones<TestZones>();
     expect(result.detailPanel).toBe(PanelA);
   });
 
-  it("handles matches with no staticData", () => {
-    mockUseMatches.mockReturnValue([{}, { staticData: { detailPanel: PanelA } }] as any);
+  it("handles matches with no handle", () => {
+    mockUseMatches.mockReturnValue([{}, { handle: { detailPanel: PanelA } }] as any);
     const result = useZones<TestZones>();
     expect(result.detailPanel).toBe(PanelA);
   });

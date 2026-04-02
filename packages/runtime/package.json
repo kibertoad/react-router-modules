@@ -27,10 +27,10 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@tanstack-react-modules/core": "^1.2.0"
+    "@react-router-modules/core": "workspace:*"
   },
   "devDependencies": {
-    "@tanstack/react-router": "^1.168.8",
+    "react-router": "^7.6.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "react": "^19.0.0",
@@ -41,7 +41,7 @@
     "zustand": "^5.0.0"
   },
   "peerDependencies": {
-    "@tanstack/react-router": "^1.168.8",
+    "react-router": "^7.6.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zustand": "^5.0.0"

@@ -1,6 +1,6 @@
-import type { ReactiveModuleDescriptor, SlotMap, SlotMapOf } from "@tanstack-react-modules/core";
-import type { ModuleEntry } from "@tanstack-react-modules/runtime";
-import { buildSlotsManifest } from "@tanstack-react-modules/runtime";
+import type { ReactiveModuleDescriptor, SlotMap, SlotMapOf } from "@react-router-modules/core";
+import type { ModuleEntry } from "@react-router-modules/runtime";
+import { buildSlotsManifest } from "@react-router-modules/runtime";
 
 export interface ResolveModuleOptions<
   TSharedDependencies extends Record<string, any>,

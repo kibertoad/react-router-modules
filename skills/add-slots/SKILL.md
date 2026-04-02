@@ -104,7 +104,7 @@ export default defineModule<AppDependencies, AppSlots>({
 
 ```typescript
 // shell/src/components/CommandPalette.tsx
-import { useSlots } from "@tanstack-react-modules/runtime";
+import { useSlots } from "@react-router-modules/runtime";
 import type { AppSlots } from "@example/app-shared";
 
 export function CommandPalette() {
@@ -128,7 +128,7 @@ For modules that only contribute slot items (no routes, no component, no lifecyc
 
 ```typescript
 // modules/external-systems/src/index.ts
-import { defineSlots } from "@tanstack-react-modules/core";
+import { defineSlots } from "@react-router-modules/core";
 import type { AppDependencies, AppSlots } from "@example/app-shared";
 
 export default defineSlots<AppDependencies, AppSlots>("external-systems", {
@@ -165,5 +165,5 @@ Order of items follows module registration order. If you need sorting, sort in t
 - Pass `AppSlots` as the second generic to both `createRegistry<AppDependencies, AppSlots>()` and `defineModule<AppDependencies, AppSlots>()`.
 - Modules can contribute to any subset of slots — omitted keys are simply not merged.
 - Slot items are concatenated across modules, not replaced. Every module's contributions are included.
-- Consume slots via `useSlots<AppSlots>()` from `@tanstack-react-modules/runtime`, not from core.
+- Consume slots via `useSlots<AppSlots>()` from `@react-router-modules/runtime`, not from core.
 - Do not import slot data from other modules directly. The registry merges contributions — modules don't need to know about each other.

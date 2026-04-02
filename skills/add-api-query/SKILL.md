@@ -93,10 +93,10 @@ export default function InvoiceList() {
 
 ```typescript
 import { getInvoiceContract } from "@example/app-shared";
-import { useParams } from "@tanstack/react-router";
+import { useParams } from "react-router";
 
 export default function InvoiceDetail() {
-  const { invoiceId } = useParams({ strict: false }) as { invoiceId: string };
+  const { invoiceId } = useParams() as { invoiceId: string };
   const httpClient = useService("httpClient");
 
   const { data: invoice } = useQuery({

@@ -1,5 +1,5 @@
-import { defineModule } from "@tanstack-react-modules/core";
-import { createRoute, lazyRouteComponent } from "@tanstack/react-router";
+import { defineModule } from "@react-router-modules/core";
+import type { RouteObject } from "react-router";
 import type { AppDependencies, AppSlots } from "@example/app-shared";
 
 export default defineModule<AppDependencies, AppSlots>({
@@ -13,32 +13,23 @@ export default defineModule<AppDependencies, AppSlots>({
     category: "finance",
   },
 
-  createRoutes: (parentRoute) => {
-    const billingRoot = createRoute({
-      getParentRoute: () => parentRoute,
-      path: "billing",
-    });
-
-    const billingIndex = createRoute({
-      getParentRoute: () => billingRoot,
-      path: "/",
-      component: lazyRouteComponent(() => import("./pages/BillingDashboard.js")),
-    });
-
-    const invoiceList = createRoute({
-      getParentRoute: () => billingRoot,
-      path: "invoices",
-      component: lazyRouteComponent(() => import("./pages/InvoiceList.js")),
-    });
-
-    const invoiceDetail = createRoute({
-      getParentRoute: () => billingRoot,
-      path: "invoices/$invoiceId",
-      component: lazyRouteComponent(() => import("./pages/InvoiceDetail.js")),
-    });
-
-    return billingRoot.addChildren([billingIndex, invoiceList, invoiceDetail]);
-  },
+  createRoutes: (): RouteObject => ({
+    path: "billing",
+    children: [
+      {
+        index: true,
+        lazy: () => import("./pages/BillingDashboard.js").then((m) => ({ Component: m.default })),
+      },
+      {
+        path: "invoices",
+        lazy: () => import("./pages/InvoiceList.js").then((m) => ({ Component: m.default })),
+      },
+      {
+        path: "invoices/:invoiceId",
+        lazy: () => import("./pages/InvoiceDetail.js").then((m) => ({ Component: m.default })),
+      },
+    ],
+  }),
 
   navigation: [
     { label: "Billing", to: "/billing", icon: "credit-card", group: "finance", order: 10 },

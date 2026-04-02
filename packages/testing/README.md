@@ -1,17 +1,17 @@
-# @tanstack-react-modules/testing
+# @react-router-modules/testing
 
 Testing utilities for reactive modules. Render modules in isolation with mocked dependencies.
 
 ## Installation
 
 ```bash
-npm install -D @tanstack-react-modules/testing
+npm install -D @react-router-modules/testing
 ```
 
 ## Usage
 
 ```typescript
-import { renderModule, createMockStore } from "@tanstack-react-modules/testing";
+import { renderModule, createMockStore } from "@react-router-modules/testing";
 
 const result = await renderModule(billingModule, {
   route: "/billing",

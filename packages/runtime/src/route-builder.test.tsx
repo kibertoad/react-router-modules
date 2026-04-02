@@ -1,8 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { buildRouteTree } from "./route-builder.js";
-import { createRootRoute, createRoute } from "@tanstack/react-router";
-import type { ReactiveModuleDescriptor } from "@tanstack-react-modules/core";
-import type { AnyRoute } from "@tanstack/react-router";
+import type { RouteObject } from "react-router";
+import type { ReactiveModuleDescriptor } from "@react-router-modules/core";
 
 function fakeModule(overrides: Partial<ReactiveModuleDescriptor> = {}): ReactiveModuleDescriptor {
   return {
@@ -15,173 +14,149 @@ function fakeModule(overrides: Partial<ReactiveModuleDescriptor> = {}): Reactive
 function moduleWithRoutes(id: string, path: string): ReactiveModuleDescriptor {
   return fakeModule({
     id,
-    createRoutes: (parent: AnyRoute) => {
-      return createRoute({
-        getParentRoute: () => parent,
-        path,
-        component: () => <></>,
-      });
-    },
+    createRoutes: () => ({
+      path,
+      Component: () => <></>,
+    }),
   });
 }
 
 describe("buildRouteTree", () => {
   it("builds a route tree with module routes", () => {
-    const tree = buildRouteTree([moduleWithRoutes("billing", "/billing")], [], {
+    const routes = buildRouteTree([moduleWithRoutes("billing", "billing")], [], {
       indexComponent: () => <></>,
     });
 
-    const children = (tree as any).children;
-    expect(children).toHaveLength(2); // index + billing
+    const rootChildren = routes[0].children!;
+    expect(rootChildren).toHaveLength(2); // index + billing
   });
 
   it("skips headless modules (no createRoutes)", () => {
     const headless = fakeModule({ id: "headless" }); // no createRoutes
-    const withRoutes = moduleWithRoutes("billing", "/billing");
+    const withRoutes = moduleWithRoutes("billing", "billing");
 
-    const tree = buildRouteTree([headless, withRoutes], [], {});
-    const children = (tree as any).children;
+    const routes = buildRouteTree([headless, withRoutes], [], {});
+    const rootChildren = routes[0].children!;
     // Only billing route, no index
-    expect(children).toHaveLength(1);
+    expect(rootChildren).toHaveLength(1);
   });
 
   it("adds shell routes alongside module routes", () => {
-    const tree = buildRouteTree([moduleWithRoutes("billing", "/billing")], [], {
-      shellRoutes: (parent) => [
-        createRoute({
-          getParentRoute: () => parent,
-          path: "/login",
-          component: () => <></>,
-        }),
-        createRoute({
-          getParentRoute: () => parent,
-          path: "/error",
-          component: () => <></>,
-        }),
+    const routes = buildRouteTree([moduleWithRoutes("billing", "billing")], [], {
+      shellRoutes: () => [
+        { path: "login", Component: () => <></> },
+        { path: "error", Component: () => <></> },
       ],
     });
 
-    const children = (tree as any).children;
+    const rootChildren = routes[0].children!;
     // login + error + billing = 3
-    expect(children).toHaveLength(3);
+    expect(rootChildren).toHaveLength(3);
   });
 
-  it("passes beforeLoad to the root route", () => {
-    const beforeLoad = vi.fn();
-    const tree = buildRouteTree([], [], { beforeLoad });
+  it("passes loader to the root route", () => {
+    const loader = vi.fn();
+    const routes = buildRouteTree([], [], { loader });
 
-    expect((tree as any).options.beforeLoad).toBe(beforeLoad);
+    expect(routes[0].loader).toBe(loader);
   });
 
   it("uses a custom rootRoute when provided", () => {
-    const customRoot = createRootRoute({
-      component: () => <></>,
-    });
+    const customRoot: RouteObject = {
+      path: "/",
+      Component: () => <></>,
+    };
 
-    const tree = buildRouteTree([moduleWithRoutes("billing", "/billing")], [], {
+    const routes = buildRouteTree([moduleWithRoutes("billing", "billing")], [], {
       rootRoute: customRoot,
     });
 
-    // The returned tree IS the custom root
-    expect(tree).toBe(customRoot);
-    expect((tree as any).children).toHaveLength(1);
+    // The returned tree contains the custom root
+    expect(routes[0]).toBe(customRoot);
+    expect(routes[0].children).toHaveLength(1);
   });
 
-  it("ignores rootComponent/notFoundComponent/beforeLoad when rootRoute is provided", () => {
-    const customRoot = createRootRoute({});
-    const beforeLoad = vi.fn();
+  it("ignores rootComponent/notFoundComponent/loader when rootRoute is provided", () => {
+    const customRoot: RouteObject = { path: "/" };
+    const loader = vi.fn();
 
-    const tree = buildRouteTree([], [], {
+    const routes = buildRouteTree([], [], {
       rootRoute: customRoot,
       rootComponent: () => <></>,
       notFoundComponent: () => <></>,
-      beforeLoad,
+      loader,
     });
 
-    expect(tree).toBe(customRoot);
-    // beforeLoad should NOT be on the custom root (it wasn't passed to createRootRoute)
-    expect((tree as any).options.beforeLoad).toBeUndefined();
+    expect(routes[0]).toBe(customRoot);
+    // loader should NOT be on the custom root (it wasn't passed to it)
+    expect(routes[0].loader).toBeUndefined();
   });
 
   it("combines index, shell routes, and module routes", () => {
-    const tree = buildRouteTree(
-      [moduleWithRoutes("billing", "/billing"), moduleWithRoutes("users", "/users")],
+    const routes = buildRouteTree(
+      [moduleWithRoutes("billing", "billing"), moduleWithRoutes("users", "users")],
       [],
       {
         indexComponent: () => <></>,
-        shellRoutes: (parent) => [
-          createRoute({ getParentRoute: () => parent, path: "/login", component: () => <></> }),
-        ],
+        shellRoutes: () => [{ path: "login", Component: () => <></> }],
       },
     );
 
-    const children = (tree as any).children;
+    const rootChildren = routes[0].children!;
     // index + login + billing + users = 4
-    expect(children).toHaveLength(4);
+    expect(rootChildren).toHaveLength(4);
   });
 
   describe("authenticatedRoute", () => {
     it("creates a layout route that wraps module routes and index", () => {
-      const authBeforeLoad = vi.fn();
-      const tree = buildRouteTree([moduleWithRoutes("billing", "/billing")], [], {
+      const authLoader = vi.fn();
+      const routes = buildRouteTree([moduleWithRoutes("billing", "billing")], [], {
         indexComponent: () => <></>,
-        authenticatedRoute: { beforeLoad: authBeforeLoad },
-        shellRoutes: (parent) => [
-          createRoute({ getParentRoute: () => parent, path: "/login", component: () => <></> }),
-        ],
+        authenticatedRoute: { loader: authLoader },
+        shellRoutes: () => [{ path: "login", Component: () => <></> }],
       });
 
-      const rootChildren = (tree as any).children;
+      const rootChildren = routes[0].children!;
       // login (public) + _authenticated (layout) = 2
       expect(rootChildren).toHaveLength(2);
 
-      // The auth layout is one of the root children (the other is /login)
-      // TanStack Router stores the id in options.id, and the route exposes it as .id
-      const authLayout = rootChildren.find(
-        (r: any) => r.options?.id === "_authenticated" || r.id === "/_authenticated",
-      );
+      // The auth layout
+      const authLayout = rootChildren.find((r: any) => r.id === "_authenticated");
       expect(authLayout).toBeDefined();
-      expect(authLayout.options.beforeLoad).toBe(authBeforeLoad);
+      expect(authLayout!.loader).toBe(authLoader);
 
       // Auth layout should have index + billing as children
-      expect(authLayout.children).toHaveLength(2);
+      expect(authLayout!.children).toHaveLength(2);
     });
 
     it("keeps shell routes outside the auth boundary", () => {
-      const authBeforeLoad = vi.fn();
-      const tree = buildRouteTree([], [], {
-        authenticatedRoute: { beforeLoad: authBeforeLoad },
-        shellRoutes: (parent) => [
-          createRoute({ getParentRoute: () => parent, path: "/login", component: () => <></> }),
-        ],
+      const authLoader = vi.fn();
+      const routes = buildRouteTree([], [], {
+        authenticatedRoute: { loader: authLoader },
+        shellRoutes: () => [{ path: "login", Component: () => <></> }],
       });
 
-      const rootChildren = (tree as any).children;
+      const rootChildren = routes[0].children!;
       // login sits at root level, not inside auth layout
-      const loginRoute = rootChildren.find((r: any) => r.options?.path === "/login");
+      const loginRoute = rootChildren.find((r: any) => r.path === "login");
       expect(loginRoute).toBeDefined();
-
-      // login's parent is root, not auth layout
-      expect(loginRoute.options.getParentRoute()).toBe(tree);
     });
 
-    it("root beforeLoad runs for all routes including public ones", () => {
-      const rootBeforeLoad = vi.fn();
-      const authBeforeLoad = vi.fn();
-      const tree = buildRouteTree([], [], {
-        beforeLoad: rootBeforeLoad,
-        authenticatedRoute: { beforeLoad: authBeforeLoad },
+    it("root loader runs for all routes including public ones", () => {
+      const rootLoader = vi.fn();
+      const authLoader = vi.fn();
+      const routes = buildRouteTree([], [], {
+        loader: rootLoader,
+        authenticatedRoute: { loader: authLoader },
       });
 
-      // Root has the observability beforeLoad
-      expect((tree as any).options.beforeLoad).toBe(rootBeforeLoad);
+      // Root has the observability loader
+      expect(routes[0].loader).toBe(rootLoader);
 
       // Auth layout has the auth guard
-      const authLayout = (tree as any).children.find(
-        (r: any) => r.options?.id === "_authenticated" || r.id === "/_authenticated",
-      );
+      const authLayout = routes[0].children!.find((r: any) => r.id === "_authenticated");
       expect(authLayout).toBeDefined();
-      expect(authLayout.options.beforeLoad).toBe(authBeforeLoad);
+      expect(authLayout!.loader).toBe(authLoader);
     });
   });
 });

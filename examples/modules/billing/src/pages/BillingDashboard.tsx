@@ -1,5 +1,5 @@
 import { useStore } from "@example/app-shared";
-import { Link } from "@tanstack/react-router";
+import { Link } from "react-router";
 
 export default function BillingDashboard() {
   const user = useStore("auth", (s) => s.user);
