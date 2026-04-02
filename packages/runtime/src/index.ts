@@ -16,7 +16,10 @@ export { useNavigation } from "./navigation-context.js";
 
 // Slots
 export { useSlots, SlotsContext } from "./slots-context.js";
-export { buildSlotsManifest } from "./slots.js";
+export { buildSlotsManifest, collectDynamicSlotFactories, evaluateDynamicSlots } from "./slots.js";
+export type { DynamicSlotFactory, SlotFilter } from "./slots.js";
+export { createSlotsSignal } from "./app.js";
+export type { SlotsSignal } from "./app.js";
 
 // Zones
 export { useZones } from "./zones.js";

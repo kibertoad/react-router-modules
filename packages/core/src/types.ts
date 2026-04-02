@@ -120,6 +120,28 @@ export interface ReactiveModuleDescriptor<
   readonly slots?: { readonly [K in keyof TSlots]?: TSlots[K] };
 
   /**
+   * Dynamic slot contributions evaluated when `recalculateSlots()` is called.
+   * Receives the current shared dependencies snapshot and returns
+   * conditional slot entries that are concatenated with static `slots`.
+   *
+   * Use this for slot contributions that depend on runtime state like
+   * user role, permissions, or feature flags. Call `recalculateSlots()`
+   * (returned from `registry.resolve()`) after the relevant state changes.
+   *
+   * @example
+   * ```ts
+   * dynamicSlots: (deps) => ({
+   *   navItems: deps.auth.user?.isAdmin
+   *     ? [{ label: "Admin", to: "/admin" }]
+   *     : [],
+   * })
+   * ```
+   */
+  readonly dynamicSlots?: (
+    deps: TSharedDependencies,
+  ) => { readonly [K in keyof TSlots]?: TSlots[K] };
+
+  /**
    * A React component the shell can render outside of routes — in a tab,
    * modal, panel, or any other container. Use this for workspace-style apps
    * where modules are rendered by the shell rather than by the router.

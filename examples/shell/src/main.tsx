@@ -31,10 +31,17 @@ registry.register(billing);
 registry.register(users);
 
 // Resolve — validates everything and produces the app
-const { App } = registry.resolve({
+const { App, recalculateSlots } = registry.resolve({
   rootComponent: Layout,
   indexComponent: Home,
   providers: [QueryProvider],
+});
+
+// Re-evaluate dynamic slots after auth state changes
+authStore.subscribe((state, prev) => {
+  if (state.isAuthenticated !== prev.isAuthenticated) {
+    recalculateSlots();
+  }
 });
 
 async function startApp() {

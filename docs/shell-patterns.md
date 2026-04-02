@@ -206,6 +206,79 @@ function CommandPalette({ search }: { search: string }) {
 | Contribute a self-contained action      | `slots.commands` with `onSelect`                                            |
 | Trigger an imperative shell action      | `useService('workspace')` - see [Workspace Patterns](workspace-patterns.md) |
 
+## Dynamic Slots
+
+Static slots are resolved once at `resolve()` time and never change. When slot contributions depend on runtime state - user role, permissions, feature flags - use `dynamicSlots` on the module descriptor. The function receives a shared dependencies snapshot and returns conditional slot entries that are concatenated with static contributions.
+
+### Conditional contributions per module
+
+```typescript
+export default defineModule<AppDependencies, AppSlots>({
+  id: "users",
+  version: "0.1.0",
+
+  // Always present
+  slots: {
+    commands: [{ id: "users:list", label: "View Users", group: "navigate", onSelect: () => {} }],
+  },
+
+  // Conditional — re-evaluated on recalculateSlots()
+  dynamicSlots: (deps) => ({
+    commands:
+      deps.auth.user?.role === "admin"
+        ? [{ id: "users:manage-roles", label: "Manage Roles", group: "actions", onSelect: () => {} }]
+        : [],
+  }),
+
+  requires: ["auth"],
+});
+```
+
+### Triggering recalculation
+
+Dynamic slots are not re-evaluated automatically. `resolve()` returns a `recalculateSlots()` function that you call when the relevant state changes:
+
+```typescript
+const { App, recalculateSlots } = registry.resolve({
+  rootComponent: Layout,
+  indexComponent: Home,
+});
+
+// In your login handler:
+async function handleLogin(credentials: LoginCredentials) {
+  await authStore.getState().login(credentials);
+  recalculateSlots();  // dynamic slots now see the logged-in user
+}
+```
+
+This avoids unnecessary recalculation on every store change. You decide when it matters.
+
+### Global slot filtering
+
+For cross-cutting filtering that spans all modules (e.g. permission checks), use `slotFilter` on `resolve()`:
+
+```typescript
+const { App, recalculateSlots } = registry.resolve({
+  rootComponent: Layout,
+  slotFilter: (slots, deps) => ({
+    ...slots,
+    commands: slots.commands.filter(
+      (cmd) => !cmd.requiredRole || deps.auth.user?.roles.includes(cmd.requiredRole),
+    ),
+  }),
+});
+```
+
+The filter runs after all static + dynamic contributions are merged, on each `recalculateSlots()` call.
+
+### When to use which
+
+| Scenario | Mechanism |
+| --- | --- |
+| Module controls its own conditional contributions | `dynamicSlots` on the module descriptor |
+| Shell enforces cross-cutting rules across all modules | `slotFilter` on `resolve()` |
+| Static data that never changes | `slots` on the module descriptor |
+
 ## Auth Guard Pattern
 
 The registry follows React Router's recommended `_authenticated` layout route pattern. Auth guards live on a layout route that wraps protected routes, while public routes (login, signup) sit outside the boundary.

@@ -148,15 +148,85 @@ When you need a new extensibility point:
 4. Contribute from modules via the `slots` field in `defineModule()`.
 5. Consume in the shell via `useSlots<AppSlots>()`.
 
+## Dynamic (conditional) slots
+
+When slot contributions depend on runtime state (user role, permissions, feature flags), use `dynamicSlots` on the module descriptor instead of (or alongside) static `slots`:
+
+```typescript
+export default defineModule<AppDependencies, AppSlots>({
+  id: "billing",
+  version: "0.1.0",
+
+  // Static — always present
+  slots: {
+    commands: [
+      { id: "billing:dashboard", label: "Open Billing", group: "navigate", onSelect: () => {} },
+    ],
+  },
+
+  // Dynamic — re-evaluated on recalculateSlots()
+  dynamicSlots: (deps) => ({
+    commands: deps.auth.user?.role === "admin"
+      ? [{ id: "billing:void-invoice", label: "Void Invoice", group: "actions", onSelect: () => {} }]
+      : [],
+  }),
+
+  requires: ["auth"],
+});
+```
+
+`dynamicSlots` receives a snapshot of all shared dependencies (stores yield their current state). Results are concatenated with static `slots`.
+
+Return empty arrays for slots that should contribute nothing — this is cleaner than omitting the key.
+
+## Triggering recalculation
+
+Dynamic slots are not re-evaluated automatically. Call `recalculateSlots()` (returned from `registry.resolve()`) after the state that dynamic slots depend on has changed:
+
+```typescript
+const { App, recalculateSlots } = registry.resolve({
+  rootComponent: Layout,
+  indexComponent: Home,
+});
+
+// After login:
+await authStore.getState().login(credentials);
+recalculateSlots();
+```
+
+`recalculateSlots()` is a no-op when no module uses `dynamicSlots` and no `slotFilter` is configured.
+
+## Slot filter (cross-cutting)
+
+For permission-based filtering that spans all modules, use `slotFilter` on `resolve()`:
+
+```typescript
+const { App, recalculateSlots } = registry.resolve({
+  rootComponent: Layout,
+  slotFilter: (slots, deps) => ({
+    ...slots,
+    commands: slots.commands.filter(
+      (cmd) => !cmd.requiredRole || deps.auth.user?.roles.includes(cmd.requiredRole),
+    ),
+  }),
+});
+```
+
+The filter runs after all static and dynamic contributions are merged, on each `recalculateSlots()` call.
+
 ## How slot merging works
 
 At `registry.resolve()`:
 
 1. Start with the `slots` defaults from `createRegistry()` config.
 2. For each registered module, append its `slots[key]` items to the corresponding array.
-3. The final merged object is provided via `SlotsContext`.
+3. Collect `dynamicSlots` functions from all modules.
+4. When `recalculateSlots()` is called, evaluate dynamic factories against the current deps snapshot, merge with static slots, and apply the slot filter.
+5. The result is provided via `SlotsContext`.
 
 Order of items follows module registration order. If you need sorting, sort in the consuming component.
+
+When no module uses `dynamicSlots` and no `slotFilter` is configured, slots remain fully static with zero additional overhead.
 
 ## Rules
 
@@ -165,5 +235,7 @@ Order of items follows module registration order. If you need sorting, sort in t
 - Pass `AppSlots` as the second generic to both `createRegistry<AppDependencies, AppSlots>()` and `defineModule<AppDependencies, AppSlots>()`.
 - Modules can contribute to any subset of slots — omitted keys are simply not merged.
 - Slot items are concatenated across modules, not replaced. Every module's contributions are included.
-- Consume slots via `useSlots<AppSlots>()` from `@react-router-modules/runtime`, not from core.
+- Use `dynamicSlots` when contributions depend on runtime state. Use static `slots` when contributions are always the same.
+- Use `slotFilter` on `resolve()` for cross-cutting filtering (permissions, feature flags) that spans all modules.
+- Consume slots via `useSlots<AppSlots>()` from `@react-router-modules/runtime`, not from core. The hook returns both static and dynamic contributions transparently.
 - Do not import slot data from other modules directly. The registry merges contributions — modules don't need to know about each other.

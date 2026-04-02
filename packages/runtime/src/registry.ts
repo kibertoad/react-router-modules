@@ -17,9 +17,10 @@ import type {
 } from "./types.js";
 import { validateNoDuplicateIds, validateDependencies } from "./validation.js";
 import { buildNavigationManifest } from "./navigation.js";
-import { buildSlotsManifest } from "./slots.js";
+import { buildSlotsManifest, collectDynamicSlotFactories } from "./slots.js";
+import type { DynamicSlotFactory, SlotFilter } from "./slots.js";
 import { buildRouteTree, type RouteBuilderOptions } from "./route-builder.js";
-import { createAppComponent } from "./app.js";
+import { createAppComponent, createSlotsSignal } from "./app.js";
 
 export interface ReactiveRegistry<
   TSharedDependencies extends Record<string, any>,
@@ -35,10 +36,13 @@ export interface ReactiveRegistry<
    * Resolve all modules and produce the application manifest.
    * Validates dependencies and builds the route tree.
    */
-  resolve(options?: ResolveOptions): ApplicationManifest<TSlots>;
+  resolve(options?: ResolveOptions<TSharedDependencies, TSlots>): ApplicationManifest<TSlots>;
 }
 
-export interface ResolveOptions {
+export interface ResolveOptions<
+  TSharedDependencies extends Record<string, any> = Record<string, any>,
+  TSlots extends SlotMapOf<TSlots> = SlotMap,
+> {
   /** Root layout component (renders <Outlet /> for child routes) */
   rootComponent?: () => React.JSX.Element;
 
@@ -140,6 +144,27 @@ export interface ResolveOptions {
    * ```
    */
   providers?: React.ComponentType<{ children: React.ReactNode }>[];
+
+  /**
+   * Global filter applied to the fully resolved slot manifest (static + dynamic)
+   * on every `recalculateSlots()` call. Use this for cross-cutting concerns
+   * like permission-based filtering or feature-flag gating.
+   *
+   * Receives the merged slots and the current shared dependencies snapshot.
+   *
+   * @example
+   * ```ts
+   * registry.resolve({
+   *   slotFilter: (slots, deps) => ({
+   *     ...slots,
+   *     navItems: slots.navItems.filter(item =>
+   *       !item.requiredRole || deps.auth.user?.roles.includes(item.requiredRole)
+   *     ),
+   *   }),
+   * })
+   * ```
+   */
+  slotFilter?: (slots: TSlots, deps: TSharedDependencies) => TSlots;
 }
 
 export function createRegistry<
@@ -178,7 +203,7 @@ export function createRegistry<
       lazyModules.push(descriptor);
     },
 
-    resolve(options?: ResolveOptions) {
+    resolve(options?: ResolveOptions<TSharedDependencies, TSlots>) {
       if (resolved) {
         throw new Error("[@react-router-modules/runtime] resolve() can only be called once.");
       }
@@ -229,6 +254,10 @@ export function createRegistry<
         modules as ReactiveModuleDescriptor[],
       );
       const slots = buildSlotsManifest<TSlots>(modules, config.slots);
+      const dynamicSlotFactories = collectDynamicSlotFactories(
+        modules as ReactiveModuleDescriptor[],
+      );
+      const slotFilter = options?.slotFilter as SlotFilter | undefined;
       const moduleEntries: ModuleEntry[] = modules.map((mod) => ({
         id: mod.id,
         version: mod.version,
@@ -258,6 +287,11 @@ export function createRegistry<
         }
       }
 
+      // Create signal for imperative recalculation of dynamic slots
+      const slotsSignal = createSlotsSignal();
+      const hasDynamicSlots = dynamicSlotFactories.length > 0 || slotFilter != null;
+      const recalculateSlots = hasDynamicSlots ? () => slotsSignal.notify() : () => {};
+
       // Create App component
       const App = createAppComponent({
         router,
@@ -268,9 +302,12 @@ export function createRegistry<
         slots,
         modules: moduleEntries,
         providers: options?.providers,
+        dynamicSlotFactories,
+        slotFilter,
+        slotsSignal,
       });
 
-      return { App, router, navigation, slots, modules: moduleEntries };
+      return { App, router, navigation, slots, modules: moduleEntries, recalculateSlots };
     },
   };
 }

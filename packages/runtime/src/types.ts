@@ -80,8 +80,28 @@ export interface ApplicationManifest<TSlots extends SlotMapOf<TSlots> = SlotMap>
   readonly router: DataRouter;
   /** Auto-generated navigation manifest from all modules */
   readonly navigation: NavigationManifest;
-  /** Collected slot contributions from all modules */
+  /** Collected slot contributions from all modules (static base — does not include dynamic) */
   readonly slots: TSlots;
   /** Registered module summaries — use useModules() to access in components */
   readonly modules: readonly ModuleEntry[];
+
+  /**
+   * Trigger re-evaluation of dynamic slots.
+   *
+   * Call this after a state change that affects `dynamicSlots` or `slotFilter`
+   * results — for example after login, role change, or feature flag update.
+   * Components consuming `useSlots()` will re-render with the new values.
+   *
+   * No-op when no module uses `dynamicSlots` and no `slotFilter` is configured.
+   *
+   * @example
+   * ```ts
+   * const { App, recalculateSlots } = registry.resolve({ ... })
+   *
+   * // After login completes:
+   * await authStore.getState().login(credentials)
+   * recalculateSlots()
+   * ```
+   */
+  readonly recalculateSlots: () => void;
 }

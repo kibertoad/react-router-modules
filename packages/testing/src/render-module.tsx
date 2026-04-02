@@ -4,7 +4,7 @@ import { createMemoryRouter, RouterProvider } from "react-router";
 import type { RouteObject } from "react-router";
 import { SharedDependenciesContext, separateDeps } from "@react-router-modules/core";
 import type { ReactiveModuleDescriptor, SlotMap } from "@react-router-modules/core";
-import { SlotsContext } from "@react-router-modules/runtime";
+import { SlotsContext, evaluateDynamicSlots } from "@react-router-modules/runtime";
 import { ModulesContext } from "@react-router-modules/runtime";
 import type { ModuleEntry } from "@react-router-modules/runtime";
 import type { StoreApi } from "zustand";
@@ -74,7 +74,30 @@ export async function renderModule<TSharedDependencies extends Record<string, an
     options.deps as Record<string, unknown>,
   );
   const moduleEntry = buildModuleEntry(module);
-  const slots = options.slots ?? {};
+  let slots: SlotMap = options.slots ?? {};
+
+  // Evaluate dynamic slots if the module has them
+  if (module.dynamicSlots) {
+    // Build a flat deps snapshot for the dynamicSlots function
+    const flatDeps: Record<string, unknown> = {};
+    if (stores) {
+      for (const [key, store] of Object.entries(stores)) {
+        flatDeps[key] = (store as StoreApi<unknown>).getState();
+      }
+    }
+    for (const [key, service] of Object.entries(services)) {
+      flatDeps[key] = service;
+    }
+    for (const [key, rs] of Object.entries(reactiveServices)) {
+      flatDeps[key] = (rs as { getSnapshot: () => unknown }).getSnapshot();
+    }
+
+    slots = evaluateDynamicSlots(
+      slots as any,
+      [module.dynamicSlots as (deps: Record<string, unknown>) => Record<string, readonly unknown[]>],
+      flatDeps,
+    );
+  }
 
   if (module.createRoutes) {
     // Route-based module — build routes and render via RouterProvider

@@ -35,9 +35,18 @@ export default defineModule<AppDependencies, AppSlots>({
 
   navigation: [{ label: "Users", to: "/users", icon: "users", group: "admin", order: 20 }],
 
+  // Static slots — always available
   slots: {
     commands: [{ id: "users:list", label: "View Users", group: "navigate", onSelect: () => {} }],
   },
+
+  // Dynamic slots — re-evaluated when recalculateSlots() is called (e.g. after login)
+  dynamicSlots: (deps) => ({
+    commands:
+      deps.auth.user?.role === "admin"
+        ? [{ id: "users:manage-roles", label: "Manage Roles", group: "actions", onSelect: () => {} }]
+        : [],
+  }),
 
   requires: ["auth", "httpClient"],
 });
