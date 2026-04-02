@@ -204,6 +204,8 @@ recalculateSlots();
 
 `recalculateSlots()` is a no-op when no module uses `dynamicSlots` and no `slotFilter` is configured.
 
+Modules can also trigger recalculation from their own components via the `useRecalculateSlots()` hook from `@react-router-modules/runtime`.
+
 ## Slot filter (cross-cutting)
 
 For permission-based filtering that spans all modules, use `slotFilter` on `resolve()`:

@@ -260,6 +260,22 @@ async function handleLogin(credentials: LoginCredentials) {
 
 This avoids unnecessary recalculation on every store change. You decide when it matters.
 
+Modules can also trigger recalculation from their own components via `useRecalculateSlots()`:
+
+```typescript
+import { useRecalculateSlots } from "@react-router-modules/runtime";
+
+function FeatureFlagToggle() {
+  const recalculateSlots = useRecalculateSlots();
+
+  async function handleToggle(flag: string, enabled: boolean) {
+    await featureFlagService.set(flag, enabled);
+    recalculateSlots();
+  }
+  // ...
+}
+```
+
 ### Global slot filtering
 
 For cross-cutting filtering that spans all modules (e.g. permission checks), use `slotFilter` on `resolve()`:

@@ -305,6 +305,7 @@ export function createRegistry<
         dynamicSlotFactories,
         slotFilter,
         slotsSignal,
+        recalculateSlots,
       });
 
       return { App, router, navigation, slots, modules: moduleEntries, recalculateSlots };

@@ -917,6 +917,24 @@ This gives you full control over when recalculation happens. Typical trigger poi
 - After a feature flag update
 - After an admin changes another user's permissions
 
+Modules can also trigger recalculation from inside their components via the `useRecalculateSlots()` hook:
+
+```typescript
+import { useRecalculateSlots } from "@react-router-modules/runtime";
+
+function PermissionsPanel() {
+  const recalculateSlots = useRecalculateSlots();
+
+  async function handleRoleChange(userId: string, role: string) {
+    await api.updateRole(userId, role);
+    recalculateSlots(); // slots that depend on roles will update
+  }
+  // ...
+}
+```
+
+Both `recalculateSlots()` (from resolve) and `useRecalculateSlots()` (from the hook) trigger the same recalculation. Use whichever is more convenient — the manifest function for shell-level code, the hook for module-level components.
+
 `recalculateSlots()` is a no-op when no module uses `dynamicSlots` and no `slotFilter` is configured.
 
 ### Slot Filter
@@ -1867,6 +1885,7 @@ npx playwright test
 | `evaluateDynamicSlots(base, factories, deps, filter?)` | Function  | Evaluates dynamic slot factories against a deps snapshot, merges with base, applies filter.   |
 | `useNavigation()`                                      | Hook      | Access the navigation manifest from any component inside `<App />`.                           |
 | `useSlots<S>()`                                        | Hook      | Access collected slot contributions (static + dynamic) from all modules.                      |
+| `useRecalculateSlots()`                                | Hook      | Returns a function that triggers dynamic slot re-evaluation. No-op when no dynamic slots.     |
 | `useZones<Z>()`                                        | Hook      | Access zone components from the currently matched route's `handle`.                           |
 | `useActiveZones<Z>(moduleId?)`                         | Hook      | Merge route zones with the active module's descriptor zones. Module wins for same key.        |
 | `useModules()`                                         | Hook      | Access registered module summaries (id, version, meta, component).                            |

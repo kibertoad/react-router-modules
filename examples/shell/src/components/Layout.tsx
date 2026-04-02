@@ -1,5 +1,5 @@
 import { Outlet } from "react-router";
-import { useZones } from "@react-router-modules/runtime";
+import { useZones, useRecalculateSlots } from "@react-router-modules/runtime";
 import { useStore } from "@example/app-shared";
 import type { AppZones } from "@example/app-shared";
 import { Sidebar } from "./Sidebar.js";
@@ -10,6 +10,7 @@ export function Layout() {
   const isAuthenticated = useStore("auth", (s) => s.isAuthenticated);
   const login = useStore("auth", (s) => s.login);
   const logout = useStore("auth", (s) => s.logout);
+  const recalculateSlots = useRecalculateSlots();
 
   const zones = useZones<AppZones>();
   const HeaderActions = zones.headerActions;
@@ -36,7 +37,10 @@ export function Layout() {
             <>
               <span style={{ color: "#4a5568" }}>{user?.name}</span>
               <button
-                onClick={logout}
+                onClick={() => {
+                  logout();
+                  recalculateSlots();
+                }}
                 style={{
                   padding: "0.375rem 0.75rem",
                   borderRadius: "0.375rem",
@@ -50,7 +54,9 @@ export function Layout() {
             </>
           ) : (
             <button
-              onClick={() => login({ email: "demo@example.com", password: "demo" })}
+              onClick={() =>
+                login({ email: "demo@example.com", password: "demo" }).then(recalculateSlots)
+              }
               style={{
                 padding: "0.375rem 0.75rem",
                 borderRadius: "0.375rem",

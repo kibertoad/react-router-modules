@@ -5,7 +5,7 @@ import type { StoreApi } from "zustand";
 import type { ReactiveService } from "@react-router-modules/core";
 import { SharedDependenciesContext } from "@react-router-modules/core";
 import { NavigationContext } from "./navigation-context.js";
-import { SlotsContext } from "./slots-context.js";
+import { SlotsContext, RecalculateSlotsContext } from "./slots-context.js";
 import { ModulesContext } from "./modules-context.js";
 import { evaluateDynamicSlots } from "./slots.js";
 import type { DynamicSlotFactory, SlotFilter } from "./slots.js";
@@ -48,6 +48,7 @@ interface AppProps {
   dynamicSlotFactories: DynamicSlotFactory[];
   slotFilter?: SlotFilter;
   slotsSignal: SlotsSignal;
+  recalculateSlots: () => void;
 }
 
 /**
@@ -115,6 +116,7 @@ export function createAppComponent({
   dynamicSlotFactories,
   slotFilter,
   slotsSignal,
+  recalculateSlots,
 }: AppProps) {
   // All values captured in closure are stable references created once at resolve() time.
   // Wrap in a stable object so context consumers don't re-render on parent renders.
@@ -149,7 +151,11 @@ export function createAppComponent({
 
       let node: React.ReactNode = (
         <SharedDependenciesContext value={depsValue}>
-          <NavigationContext value={navigation}>{slotsProvider}</NavigationContext>
+          <NavigationContext value={navigation}>
+            <RecalculateSlotsContext value={recalculateSlots}>
+              {slotsProvider}
+            </RecalculateSlotsContext>
+          </NavigationContext>
         </SharedDependenciesContext>
       );
 

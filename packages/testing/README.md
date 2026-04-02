@@ -24,4 +24,6 @@ const result = await renderModule(billingModule, {
 expect(result.getByText("Billing Dashboard")).toBeTruthy();
 ```
 
+Both `renderModule` and `resolveModule` automatically evaluate `dynamicSlots` when present on a module, using the provided `deps` to build the dependencies snapshot.
+
 See the [main documentation](https://github.com/kibertoad/reactive#readme) for the full guide.

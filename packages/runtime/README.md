@@ -22,10 +22,19 @@ const registry = createRegistry<AppDependencies, AppSlots>({
 
 registry.register(billingModule);
 
-const { App } = registry.resolve({
+const { App, recalculateSlots } = registry.resolve({
   rootComponent: Layout,
   indexComponent: HomePage,
 });
+
+// Re-evaluate dynamic slots after auth state changes
+authStore.subscribe((state, prev) => {
+  if (state.isAuthenticated !== prev.isAuthenticated) {
+    recalculateSlots();
+  }
+});
 ```
+
+Modules can contribute conditional slot entries via `dynamicSlots` and trigger re-evaluation from components via `useRecalculateSlots()`. The shell can apply cross-cutting filters via `slotFilter` on `resolve()`.
 
 See the [main documentation](https://github.com/kibertoad/reactive#readme) for the full guide.
