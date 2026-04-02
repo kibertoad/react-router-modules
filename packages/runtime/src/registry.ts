@@ -184,16 +184,24 @@ export function createRegistry<
       }
       resolved = true;
 
-      // Validate (cast is safe — these functions only read structural properties)
-      const mods = modules as ReactiveModuleDescriptor[];
-      const lazyMods = lazyModules as LazyModuleDescriptor[];
-      validateNoDuplicateIds(mods, lazyMods);
-      validateDependencies(mods, availableKeys);
+      // Validate — cast is safe since validation only reads structural properties (id, requires)
+      validateNoDuplicateIds(
+        modules as ReactiveModuleDescriptor[],
+        lazyModules as LazyModuleDescriptor[],
+      );
+      validateDependencies(modules as ReactiveModuleDescriptor[], availableKeys);
 
       // Run onRegister lifecycle hooks
       const deps = buildDepsObject<TSharedDependencies>(config);
       for (const mod of modules) {
-        mod.lifecycle?.onRegister?.(deps);
+        try {
+          mod.lifecycle?.onRegister?.(deps);
+        } catch (err) {
+          throw new Error(
+            `[@react-router-modules/runtime] Module "${mod.id}" lifecycle.onRegister() failed: ${err instanceof Error ? err.message : String(err)}`,
+            { cause: err },
+          );
+        }
       }
 
       // Build route tree
@@ -206,14 +214,20 @@ export function createRegistry<
         authenticatedRoute: options?.authenticatedRoute,
         shellRoutes: options?.shellRoutes,
       };
-      const routes = buildRouteTree(mods, lazyMods, routeBuilderOptions);
+      const routes = buildRouteTree(
+        modules as ReactiveModuleDescriptor[],
+        lazyModules as LazyModuleDescriptor[],
+        routeBuilderOptions,
+      );
 
       // Create React Router instance (use memory router when DOM is unavailable, e.g. tests)
       const router =
         typeof document !== "undefined" ? createBrowserRouter(routes) : createMemoryRouter(routes);
 
       // Build navigation, slots, and module entries
-      const navigation: NavigationManifest = buildNavigationManifest(mods);
+      const navigation: NavigationManifest = buildNavigationManifest(
+        modules as ReactiveModuleDescriptor[],
+      );
       const slots = buildSlotsManifest<TSlots>(modules, config.slots);
       const moduleEntries: ModuleEntry[] = modules.map((mod) => ({
         id: mod.id,

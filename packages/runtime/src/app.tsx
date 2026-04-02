@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { RouterProvider } from "react-router";
 import type { DataRouter } from "react-router";
 import type { StoreApi } from "zustand";
@@ -29,25 +30,33 @@ export function createAppComponent({
   modules,
   providers,
 }: AppProps) {
-  function App() {
-    let tree: React.ReactNode = (
-      <SharedDependenciesContext value={{ stores, services, reactiveServices }}>
-        <NavigationContext value={navigation}>
-          <SlotsContext value={slots}>
-            <ModulesContext value={modules}>
-              <RouterProvider router={router} />
-            </ModulesContext>
-          </SlotsContext>
-        </NavigationContext>
-      </SharedDependenciesContext>
-    );
+  // All values captured in closure are stable references created once at resolve() time.
+  // Wrap in a stable object so context consumers don't re-render on parent renders.
+  const depsValue = { stores, services, reactiveServices };
 
-    // Wrap with user-supplied providers (first element = outermost wrapper)
-    if (providers) {
-      for (const Provider of [...providers].reverse()) {
-        tree = <Provider>{tree}</Provider>;
+  function App() {
+    const tree = useMemo(() => {
+      let node: React.ReactNode = (
+        <SharedDependenciesContext value={depsValue}>
+          <NavigationContext value={navigation}>
+            <SlotsContext value={slots}>
+              <ModulesContext value={modules}>
+                <RouterProvider router={router} />
+              </ModulesContext>
+            </SlotsContext>
+          </NavigationContext>
+        </SharedDependenciesContext>
+      );
+
+      // Wrap with user-supplied providers (first element = outermost wrapper)
+      if (providers) {
+        for (const Provider of [...providers].reverse()) {
+          node = <Provider>{node}</Provider>;
+        }
       }
-    }
+
+      return node;
+    }, []);
 
     return tree;
   }
