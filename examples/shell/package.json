@@ -1,0 +1,41 @@
+{
+  "name": "shell",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@example/app-shared": "workspace:*",
+    "@example/billing-module": "workspace:*",
+    "@example/users-module": "workspace:*",
+    "@lokalise/frontend-http-client": "^7.0.0",
+    "@tanstack-react-modules/core": "workspace:*",
+    "@tanstack-react-modules/runtime": "workspace:*",
+    "@tanstack/react-query": "^5.95.0",
+    "@tanstack/react-router": "^1.168.8",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "wretch": "^2.11.0",
+    "zustand": "^5.0.0"
+  },
+  "devDependencies": {
+    "@lokalise/universal-testing-utils": "^3.5.0",
+    "@rolldown/plugin-babel": "^0.2.2",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^6.0.1",
+    "babel-plugin-react-compiler": "^1.0.0",
+    "msw": "^2.12.14",
+    "typescript": "^6.0.2",
+    "vite": "^8.0.3"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
+  }
+}
