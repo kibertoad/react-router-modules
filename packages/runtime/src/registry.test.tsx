@@ -174,4 +174,91 @@ describe("createRegistry", () => {
 
     expect(() => registry.resolve()).toThrow(/resolve\(\) can only be called once/);
   });
+
+  it("returns recalculateSlots as a function", () => {
+    const registry = createRegistry<TestDeps, TestSlots>({
+      stores: { auth: createTestAuthStore() },
+      services: { api: { baseUrl: "http://test" } },
+    });
+
+    const { recalculateSlots } = registry.resolve();
+
+    expect(recalculateSlots).toBeTypeOf("function");
+    // Should not throw when called
+    recalculateSlots();
+  });
+
+  it("recalculateSlots is a no-op when no dynamic slots or slotFilter exist", () => {
+    const registry = createRegistry<TestDeps, TestSlots>({
+      stores: { auth: createTestAuthStore() },
+      services: { api: { baseUrl: "http://test" } },
+    });
+
+    registry.register(headlessModule("static"));
+
+    const { recalculateSlots } = registry.resolve();
+
+    // Should not throw
+    recalculateSlots();
+    recalculateSlots();
+  });
+
+  it("collects static slots from modules with dynamicSlots", () => {
+    const registry = createRegistry<TestDeps, TestSlots>({
+      stores: { auth: createTestAuthStore() },
+      services: { api: { baseUrl: "http://test" } },
+      slots: { commands: [] },
+    });
+
+    registry.register({
+      id: "dynamic-mod",
+      version: "1.0.0",
+      slots: { commands: [{ id: "static-cmd", label: "Static" }] },
+      dynamicSlots: (deps) => ({
+        commands: deps.auth.user ? [{ id: "dyn-cmd", label: "Dynamic" }] : [],
+      }),
+    });
+
+    // Static slots are still collected at resolve time
+    const { slots } = registry.resolve();
+    expect(slots.commands).toEqual([{ id: "static-cmd", label: "Static" }]);
+  });
+
+  it("returns a callable recalculateSlots when dynamicSlots are present", () => {
+    const registry = createRegistry<TestDeps, TestSlots>({
+      stores: { auth: createTestAuthStore() },
+      services: { api: { baseUrl: "http://test" } },
+      slots: { commands: [] },
+    });
+
+    registry.register({
+      id: "dynamic-mod",
+      version: "1.0.0",
+      dynamicSlots: () => ({
+        commands: [{ id: "dyn", label: "Dynamic" }],
+      }),
+    });
+
+    const { recalculateSlots } = registry.resolve();
+
+    expect(recalculateSlots).toBeTypeOf("function");
+    recalculateSlots(); // should not throw
+  });
+
+  it("returns a callable recalculateSlots when only slotFilter is present", () => {
+    const registry = createRegistry<TestDeps, TestSlots>({
+      stores: { auth: createTestAuthStore() },
+      services: { api: { baseUrl: "http://test" } },
+      slots: { commands: [] },
+    });
+
+    registry.register(headlessModule("static"));
+
+    const { recalculateSlots } = registry.resolve({
+      slotFilter: (slots) => slots,
+    });
+
+    expect(recalculateSlots).toBeTypeOf("function");
+    recalculateSlots(); // should not throw
+  });
 });

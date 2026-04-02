@@ -857,11 +857,117 @@ Without `slots` defaults, accessing a key that no module contributed to would re
 
 Lazy modules (registered via `registerLazy()`) cannot contribute slots at registration time since their descriptors are not loaded yet. Only eager modules contribute to the slots manifest.
 
+### Dynamic Slots
+
+Static `slots` are resolved once at `resolve()` time and never change. When slot contributions depend on runtime state - user role, permissions, feature flags - use `dynamicSlots`:
+
+```typescript
+export default defineModule<AppDependencies, AppSlots>({
+  id: "users",
+  version: "0.1.0",
+
+  // Static slots — always present
+  slots: {
+    commands: [{ id: "users:list", label: "View Users", group: "navigate", onSelect: () => {} }],
+  },
+
+  // Dynamic slots — re-evaluated on recalculateSlots()
+  dynamicSlots: (deps) => ({
+    commands:
+      deps.auth.user?.role === "admin"
+        ? [
+            {
+              id: "users:manage-roles",
+              label: "Manage Roles",
+              group: "actions",
+              onSelect: () => {},
+            },
+          ]
+        : [],
+  }),
+
+  requires: ["auth"],
+});
+```
+
+`dynamicSlots` receives a snapshot of all shared dependencies (stores yield their current state, reactive services yield their current snapshot). The result is merged with static `slots` contributions from all modules. Components consuming `useSlots()` see the updated values.
+
+Return empty arrays for slots that should contribute nothing under the current conditions - this is cleaner than omitting the key.
+
+### Triggering recalculation
+
+Dynamic slots are **not** re-evaluated automatically on every store change. Instead, `resolve()` returns a `recalculateSlots()` function that you call when the relevant state has changed:
+
+```typescript
+const { App, recalculateSlots } = registry.resolve({
+  rootComponent: Layout,
+  indexComponent: Home,
+});
+
+// Call after any state change that affects dynamic slots:
+async function handleLogin(credentials: LoginCredentials) {
+  await authStore.getState().login(credentials);
+  recalculateSlots();
+}
+```
+
+This gives you full control over when recalculation happens. Typical trigger points:
+
+- After login/logout (role or permissions changed)
+- After a feature flag update
+- After an admin changes another user's permissions
+
+Modules can also trigger recalculation from inside their components via the `useRecalculateSlots()` hook:
+
+```typescript
+import { useRecalculateSlots } from "@react-router-modules/runtime";
+
+function PermissionsPanel() {
+  const recalculateSlots = useRecalculateSlots();
+
+  async function handleRoleChange(userId: string, role: string) {
+    await api.updateRole(userId, role);
+    recalculateSlots(); // slots that depend on roles will update
+  }
+  // ...
+}
+```
+
+Both `recalculateSlots()` (from resolve) and `useRecalculateSlots()` (from the hook) trigger the same recalculation. Use whichever is more convenient — the manifest function for shell-level code, the hook for module-level components.
+
+`recalculateSlots()` is a no-op when no module uses `dynamicSlots` and no `slotFilter` is configured.
+
+### Slot Filter
+
+For cross-cutting concerns that span multiple modules - like filtering all slot contributions based on permissions - use `slotFilter` on `resolve()`:
+
+```typescript
+const { App, recalculateSlots } = registry.resolve({
+  rootComponent: Layout,
+  slotFilter: (slots, deps) => ({
+    ...slots,
+    commands: slots.commands.filter(
+      (cmd) => !cmd.requiredRole || deps.auth.user?.roles.includes(cmd.requiredRole),
+    ),
+  }),
+});
+```
+
+The filter runs after all static and dynamic contributions are merged. It receives the full slots manifest and the current deps snapshot. It is re-evaluated on each `recalculateSlots()` call.
+
+### Performance
+
+When no module uses `dynamicSlots` and no `slotFilter` is configured, the framework uses the static code path with zero additional overhead - no subscriptions, no re-renders, and `recalculateSlots()` is a no-op.
+
+When dynamic slots are active, recalculation only happens when you explicitly call `recalculateSlots()`. The evaluation itself is cheap (running filter functions over small arrays).
+
 ### When to use slots vs stores
 
 | Use case                                                                           | Mechanism                 |
 | ---------------------------------------------------------------------------------- | ------------------------- |
-| Static declarations known at module registration (commands, tab types, badges)     | **Slots**                 |
+| Static declarations known at module registration (commands, tab types, badges)     | **Slots** (static)        |
+| Conditional declarations based on runtime state (role-gated nav items)             | **Slots** (dynamic)       |
+| Cross-cutting slot filtering (permissions, feature flags)                          | **Slot filter**           |
 | Runtime state that changes over time (active tab, notifications, user preferences) | **Shared Zustand stores** |
 | Server data (API responses, cached queries)                                        | **React Query**           |
 
@@ -880,13 +986,13 @@ Zones have two contribution paths:
 
 ### Slots vs Zones
 
-|                   | Slots                       | Zones                                 |
-| ----------------- | --------------------------- | ------------------------------------- |
-| **Source**        | All registered modules      | Active route or active module tab     |
-| **When resolved** | Once at `resolve()` time    | On every navigation or tab switch     |
-| **Value type**    | Arrays (concatenated)       | Single React component                |
-| **Use case**      | Commands, tab types, badges | Detail panel, header actions, sidebar |
-| **Hook**          | `useSlots<AppSlots>()`      | `useActiveZones<AppZones>(moduleId?)` |
+|                   | Slots                                                          | Zones                                 |
+| ----------------- | -------------------------------------------------------------- | ------------------------------------- |
+| **Source**        | All registered modules                                         | Active route or active module tab     |
+| **When resolved** | Static: once at `resolve()`. Dynamic: on `recalculateSlots()`. | On every navigation or tab switch     |
+| **Value type**    | Arrays (concatenated)                                          | Single React component                |
+| **Use case**      | Commands, tab types, badges                                    | Detail panel, header actions, sidebar |
+| **Hook**          | `useSlots<AppSlots>()`                                         | `useActiveZones<AppZones>(moduleId?)` |
 
 ### Defining zones in app-shared
 
@@ -1771,26 +1877,31 @@ npx playwright test
 
 ### @react-router-modules/runtime
 
-| Export                                   | Type      | Description                                                                                   |
-| ---------------------------------------- | --------- | --------------------------------------------------------------------------------------------- |
-| `createRegistry<T, S>(config)`           | Function  | Creates a module registry. `T` = shared deps, `S` = slots. Config has `{ stores, services }`. |
-| `buildSlotsManifest(modules, defaults?)` | Function  | Concatenates slot contributions from multiple modules. Used internally and by testing.        |
-| `useNavigation()`                        | Hook      | Access the navigation manifest from any component inside `<App />`.                           |
-| `useSlots<S>()`                          | Hook      | Access collected slot contributions from all modules.                                         |
-| `useZones<Z>()`                          | Hook      | Access zone components from the currently matched route's `handle`.                           |
-| `useActiveZones<Z>(moduleId?)`           | Hook      | Merge route zones with the active module's descriptor zones. Module wins for same key.        |
-| `useModules()`                           | Hook      | Access registered module summaries (id, version, meta, component).                            |
-| `getModuleMeta<T>(entry)`                | Function  | Type-safe accessor for module metadata. Returns `T \| undefined`.                             |
-| `SlotsContext`                           | Context   | React context holding the slots manifest. Used internally.                                    |
-| `ModulesContext`                         | Context   | React context holding module entries. Used internally and by testing.                         |
-| `ModuleErrorBoundary`                    | Component | Error boundary that isolates module-level crashes.                                            |
-| `ReactiveRegistry<T, S>`                 | Type      | Registry interface with `register()`, `registerLazy()`, `resolve()`.                          |
-| `RegistryConfig<T>`                      | Type      | Registry configuration shape.                                                                 |
-| `ApplicationManifest<T, S>`              | Type      | Resolved app shape: `{ App, router, navigation, slots, modules }`.                            |
-| `ModuleEntry`                            | Type      | `{ id, version, meta?, component?, zones? }`.                                                 |
-| `NavigationManifest`                     | Type      | `{ items, groups, ungrouped }`.                                                               |
-| `NavigationGroup`                        | Type      | `{ group, items }`.                                                                           |
-| `ResolveOptions`                         | Type      | `{ rootComponent, indexComponent, notFoundComponent }`.                                       |
+| Export                                                 | Type      | Description                                                                                   |
+| ------------------------------------------------------ | --------- | --------------------------------------------------------------------------------------------- |
+| `createRegistry<T, S>(config)`                         | Function  | Creates a module registry. `T` = shared deps, `S` = slots. Config has `{ stores, services }`. |
+| `buildSlotsManifest(modules, defaults?)`               | Function  | Concatenates static slot contributions from multiple modules. Used internally and by testing. |
+| `collectDynamicSlotFactories(modules)`                 | Function  | Collects `dynamicSlots` functions from registered modules. Used internally.                   |
+| `evaluateDynamicSlots(base, factories, deps, filter?)` | Function  | Evaluates dynamic slot factories against a deps snapshot, merges with base, applies filter.   |
+| `useNavigation()`                                      | Hook      | Access the navigation manifest from any component inside `<App />`.                           |
+| `useSlots<S>()`                                        | Hook      | Access collected slot contributions (static + dynamic) from all modules.                      |
+| `useRecalculateSlots()`                                | Hook      | Returns a function that triggers dynamic slot re-evaluation. No-op when no dynamic slots.     |
+| `useZones<Z>()`                                        | Hook      | Access zone components from the currently matched route's `handle`.                           |
+| `useActiveZones<Z>(moduleId?)`                         | Hook      | Merge route zones with the active module's descriptor zones. Module wins for same key.        |
+| `useModules()`                                         | Hook      | Access registered module summaries (id, version, meta, component).                            |
+| `getModuleMeta<T>(entry)`                              | Function  | Type-safe accessor for module metadata. Returns `T \| undefined`.                             |
+| `SlotsContext`                                         | Context   | React context holding the slots manifest. Used internally.                                    |
+| `ModulesContext`                                       | Context   | React context holding module entries. Used internally and by testing.                         |
+| `ModuleErrorBoundary`                                  | Component | Error boundary that isolates module-level crashes.                                            |
+| `ReactiveRegistry<T, S>`                               | Type      | Registry interface with `register()`, `registerLazy()`, `resolve()`.                          |
+| `RegistryConfig<T>`                                    | Type      | Registry configuration shape.                                                                 |
+| `ApplicationManifest<T, S>`                            | Type      | Resolved app shape: `{ App, router, navigation, slots, modules, recalculateSlots }`.          |
+| `ModuleEntry`                                          | Type      | `{ id, version, meta?, component?, zones? }`.                                                 |
+| `NavigationManifest`                                   | Type      | `{ items, groups, ungrouped }`.                                                               |
+| `NavigationGroup`                                      | Type      | `{ group, items }`.                                                                           |
+| `ResolveOptions<T, S>`                                 | Type      | `{ rootComponent, indexComponent, notFoundComponent, slotFilter?, ... }`.                     |
+| `DynamicSlotFactory`                                   | Type      | `(deps) => Record<string, readonly unknown[]>`. Internal type for dynamic slot functions.     |
+| `SlotFilter`                                           | Type      | `(slots, deps) => slots`. Internal type for the global slot filter.                           |
 
 ### @react-router-modules/testing
 
