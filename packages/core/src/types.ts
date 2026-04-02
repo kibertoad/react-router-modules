@@ -137,9 +137,9 @@ export interface ReactiveModuleDescriptor<
    * })
    * ```
    */
-  readonly dynamicSlots?: (
-    deps: TSharedDependencies,
-  ) => { readonly [K in keyof TSlots]?: TSlots[K] };
+  readonly dynamicSlots?: (deps: TSharedDependencies) => {
+    readonly [K in keyof TSlots]?: TSlots[K];
+  };
 
   /**
    * A React component the shell can render outside of routes — in a tab,

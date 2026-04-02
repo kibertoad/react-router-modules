@@ -4,12 +4,17 @@ import type { ReactiveModuleDescriptor } from "@react-router-modules/core";
  * A dynamic slot factory — a function that receives a deps snapshot
  * and returns conditional slot contributions.
  */
-export type DynamicSlotFactory = (deps: Record<string, unknown>) => Record<string, readonly unknown[]>;
+export type DynamicSlotFactory = (
+  deps: Record<string, unknown>,
+) => Record<string, readonly unknown[]>;
 
 /**
  * A slot filter — receives the full merged slots and deps, returns filtered slots.
  */
-export type SlotFilter = (slots: Record<string, unknown[]>, deps: Record<string, unknown>) => Record<string, unknown[]>;
+export type SlotFilter = (
+  slots: Record<string, unknown[]>,
+  deps: Record<string, unknown>,
+) => Record<string, unknown[]>;
 
 /**
  * Collects slot contributions from all registered modules.

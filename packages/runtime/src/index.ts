@@ -18,8 +18,6 @@ export { useNavigation } from "./navigation-context.js";
 export { useSlots, SlotsContext } from "./slots-context.js";
 export { buildSlotsManifest, collectDynamicSlotFactories, evaluateDynamicSlots } from "./slots.js";
 export type { DynamicSlotFactory, SlotFilter } from "./slots.js";
-export { createSlotsSignal } from "./app.js";
-export type { SlotsSignal } from "./app.js";
 
 // Zones
 export { useZones } from "./zones.js";

@@ -226,7 +226,14 @@ export default defineModule<AppDependencies, AppSlots>({
   dynamicSlots: (deps) => ({
     commands:
       deps.auth.user?.role === "admin"
-        ? [{ id: "users:manage-roles", label: "Manage Roles", group: "actions", onSelect: () => {} }]
+        ? [
+            {
+              id: "users:manage-roles",
+              label: "Manage Roles",
+              group: "actions",
+              onSelect: () => {},
+            },
+          ]
         : [],
   }),
 
@@ -247,7 +254,7 @@ const { App, recalculateSlots } = registry.resolve({
 // In your login handler:
 async function handleLogin(credentials: LoginCredentials) {
   await authStore.getState().login(credentials);
-  recalculateSlots();  // dynamic slots now see the logged-in user
+  recalculateSlots(); // dynamic slots now see the logged-in user
 }
 ```
 
@@ -273,11 +280,11 @@ The filter runs after all static + dynamic contributions are merged, on each `re
 
 ### When to use which
 
-| Scenario | Mechanism |
-| --- | --- |
-| Module controls its own conditional contributions | `dynamicSlots` on the module descriptor |
-| Shell enforces cross-cutting rules across all modules | `slotFilter` on `resolve()` |
-| Static data that never changes | `slots` on the module descriptor |
+| Scenario                                              | Mechanism                               |
+| ----------------------------------------------------- | --------------------------------------- |
+| Module controls its own conditional contributions     | `dynamicSlots` on the module descriptor |
+| Shell enforces cross-cutting rules across all modules | `slotFilter` on `resolve()`             |
+| Static data that never changes                        | `slots` on the module descriptor        |
 
 ## Auth Guard Pattern
 

@@ -94,7 +94,10 @@ function DynamicSlotsProvider({
   const [resolvedSlots, setResolvedSlots] = useState(computeSlots);
 
   useEffect(() => {
-    return signal.subscribe(() => setResolvedSlots(computeSlots()));
+    const unsubscribe = signal.subscribe(() => setResolvedSlots(computeSlots()));
+    // Catch any recalculateSlots() calls that fired between initial render and this effect
+    setResolvedSlots(computeSlots());
+    return unsubscribe;
   }, [computeSlots, signal]);
 
   return <SlotsContext value={resolvedSlots}>{children}</SlotsContext>;

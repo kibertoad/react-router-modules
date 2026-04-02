@@ -53,7 +53,11 @@ export function resolveModule<
     const deps = (options?.deps ?? {}) as Record<string, unknown>;
     slots = evaluateDynamicSlots(
       slots,
-      [module.dynamicSlots as (deps: Record<string, unknown>) => Record<string, readonly unknown[]>],
+      [
+        module.dynamicSlots as (
+          deps: Record<string, unknown>,
+        ) => Record<string, readonly unknown[]>,
+      ],
       deps,
     );
   }

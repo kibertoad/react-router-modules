@@ -44,7 +44,14 @@ export default defineModule<AppDependencies, AppSlots>({
   dynamicSlots: (deps) => ({
     commands:
       deps.auth.user?.role === "admin"
-        ? [{ id: "users:manage-roles", label: "Manage Roles", group: "actions", onSelect: () => {} }]
+        ? [
+            {
+              id: "users:manage-roles",
+              label: "Manage Roles",
+              group: "actions",
+              onSelect: () => {},
+            },
+          ]
         : [],
   }),
 

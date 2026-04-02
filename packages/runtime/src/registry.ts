@@ -18,7 +18,7 @@ import type {
 import { validateNoDuplicateIds, validateDependencies } from "./validation.js";
 import { buildNavigationManifest } from "./navigation.js";
 import { buildSlotsManifest, collectDynamicSlotFactories } from "./slots.js";
-import type { DynamicSlotFactory, SlotFilter } from "./slots.js";
+import type { SlotFilter } from "./slots.js";
 import { buildRouteTree, type RouteBuilderOptions } from "./route-builder.js";
 import { createAppComponent, createSlotsSignal } from "./app.js";
 

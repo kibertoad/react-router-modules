@@ -94,7 +94,11 @@ export async function renderModule<TSharedDependencies extends Record<string, an
 
     slots = evaluateDynamicSlots(
       slots as any,
-      [module.dynamicSlots as (deps: Record<string, unknown>) => Record<string, readonly unknown[]>],
+      [
+        module.dynamicSlots as (
+          deps: Record<string, unknown>,
+        ) => Record<string, readonly unknown[]>,
+      ],
       flatDeps,
     );
   }

@@ -875,7 +875,14 @@ export default defineModule<AppDependencies, AppSlots>({
   dynamicSlots: (deps) => ({
     commands:
       deps.auth.user?.role === "admin"
-        ? [{ id: "users:manage-roles", label: "Manage Roles", group: "actions", onSelect: () => {} }]
+        ? [
+            {
+              id: "users:manage-roles",
+              label: "Manage Roles",
+              group: "actions",
+              onSelect: () => {},
+            },
+          ]
         : [],
   }),
 
@@ -961,13 +968,13 @@ Zones have two contribution paths:
 
 ### Slots vs Zones
 
-|                   | Slots                       | Zones                                 |
-| ----------------- | --------------------------- | ------------------------------------- |
-| **Source**        | All registered modules      | Active route or active module tab     |
+|                   | Slots                                                          | Zones                                 |
+| ----------------- | -------------------------------------------------------------- | ------------------------------------- |
+| **Source**        | All registered modules                                         | Active route or active module tab     |
 | **When resolved** | Static: once at `resolve()`. Dynamic: on `recalculateSlots()`. | On every navigation or tab switch     |
-| **Value type**    | Arrays (concatenated)       | Single React component                |
-| **Use case**      | Commands, tab types, badges | Detail panel, header actions, sidebar |
-| **Hook**          | `useSlots<AppSlots>()`      | `useActiveZones<AppZones>(moduleId?)` |
+| **Value type**    | Arrays (concatenated)                                          | Single React component                |
+| **Use case**      | Commands, tab types, badges                                    | Detail panel, header actions, sidebar |
+| **Hook**          | `useSlots<AppSlots>()`                                         | `useActiveZones<AppZones>(moduleId?)` |
 
 ### Defining zones in app-shared
 
@@ -1852,30 +1859,30 @@ npx playwright test
 
 ### @react-router-modules/runtime
 
-| Export                                            | Type      | Description                                                                                   |
-| ------------------------------------------------- | --------- | --------------------------------------------------------------------------------------------- |
-| `createRegistry<T, S>(config)`                    | Function  | Creates a module registry. `T` = shared deps, `S` = slots. Config has `{ stores, services }`. |
-| `buildSlotsManifest(modules, defaults?)`          | Function  | Concatenates static slot contributions from multiple modules. Used internally and by testing. |
-| `collectDynamicSlotFactories(modules)`            | Function  | Collects `dynamicSlots` functions from registered modules. Used internally.                   |
-| `evaluateDynamicSlots(base, factories, deps, filter?)` | Function | Evaluates dynamic slot factories against a deps snapshot, merges with base, applies filter.  |
-| `useNavigation()`                                 | Hook      | Access the navigation manifest from any component inside `<App />`.                           |
-| `useSlots<S>()`                                   | Hook      | Access collected slot contributions (static + dynamic) from all modules.                      |
-| `useZones<Z>()`                                   | Hook      | Access zone components from the currently matched route's `handle`.                           |
-| `useActiveZones<Z>(moduleId?)`                    | Hook      | Merge route zones with the active module's descriptor zones. Module wins for same key.        |
-| `useModules()`                                    | Hook      | Access registered module summaries (id, version, meta, component).                            |
-| `getModuleMeta<T>(entry)`                         | Function  | Type-safe accessor for module metadata. Returns `T \| undefined`.                             |
-| `SlotsContext`                                    | Context   | React context holding the slots manifest. Used internally.                                    |
-| `ModulesContext`                                  | Context   | React context holding module entries. Used internally and by testing.                         |
-| `ModuleErrorBoundary`                             | Component | Error boundary that isolates module-level crashes.                                            |
-| `ReactiveRegistry<T, S>`                          | Type      | Registry interface with `register()`, `registerLazy()`, `resolve()`.                          |
-| `RegistryConfig<T>`                               | Type      | Registry configuration shape.                                                                 |
-| `ApplicationManifest<T, S>`                        | Type      | Resolved app shape: `{ App, router, navigation, slots, modules, recalculateSlots }`.          |
-| `ModuleEntry`                                     | Type      | `{ id, version, meta?, component?, zones? }`.                                                 |
-| `NavigationManifest`                              | Type      | `{ items, groups, ungrouped }`.                                                               |
-| `NavigationGroup`                                 | Type      | `{ group, items }`.                                                                           |
-| `ResolveOptions<T, S>`                            | Type      | `{ rootComponent, indexComponent, notFoundComponent, slotFilter?, ... }`.                     |
-| `DynamicSlotFactory`                              | Type      | `(deps) => Record<string, readonly unknown[]>`. Internal type for dynamic slot functions.     |
-| `SlotFilter`                                      | Type      | `(slots, deps) => slots`. Internal type for the global slot filter.                           |
+| Export                                                 | Type      | Description                                                                                   |
+| ------------------------------------------------------ | --------- | --------------------------------------------------------------------------------------------- |
+| `createRegistry<T, S>(config)`                         | Function  | Creates a module registry. `T` = shared deps, `S` = slots. Config has `{ stores, services }`. |
+| `buildSlotsManifest(modules, defaults?)`               | Function  | Concatenates static slot contributions from multiple modules. Used internally and by testing. |
+| `collectDynamicSlotFactories(modules)`                 | Function  | Collects `dynamicSlots` functions from registered modules. Used internally.                   |
+| `evaluateDynamicSlots(base, factories, deps, filter?)` | Function  | Evaluates dynamic slot factories against a deps snapshot, merges with base, applies filter.   |
+| `useNavigation()`                                      | Hook      | Access the navigation manifest from any component inside `<App />`.                           |
+| `useSlots<S>()`                                        | Hook      | Access collected slot contributions (static + dynamic) from all modules.                      |
+| `useZones<Z>()`                                        | Hook      | Access zone components from the currently matched route's `handle`.                           |
+| `useActiveZones<Z>(moduleId?)`                         | Hook      | Merge route zones with the active module's descriptor zones. Module wins for same key.        |
+| `useModules()`                                         | Hook      | Access registered module summaries (id, version, meta, component).                            |
+| `getModuleMeta<T>(entry)`                              | Function  | Type-safe accessor for module metadata. Returns `T \| undefined`.                             |
+| `SlotsContext`                                         | Context   | React context holding the slots manifest. Used internally.                                    |
+| `ModulesContext`                                       | Context   | React context holding module entries. Used internally and by testing.                         |
+| `ModuleErrorBoundary`                                  | Component | Error boundary that isolates module-level crashes.                                            |
+| `ReactiveRegistry<T, S>`                               | Type      | Registry interface with `register()`, `registerLazy()`, `resolve()`.                          |
+| `RegistryConfig<T>`                                    | Type      | Registry configuration shape.                                                                 |
+| `ApplicationManifest<T, S>`                            | Type      | Resolved app shape: `{ App, router, navigation, slots, modules, recalculateSlots }`.          |
+| `ModuleEntry`                                          | Type      | `{ id, version, meta?, component?, zones? }`.                                                 |
+| `NavigationManifest`                                   | Type      | `{ items, groups, ungrouped }`.                                                               |
+| `NavigationGroup`                                      | Type      | `{ group, items }`.                                                                           |
+| `ResolveOptions<T, S>`                                 | Type      | `{ rootComponent, indexComponent, notFoundComponent, slotFilter?, ... }`.                     |
+| `DynamicSlotFactory`                                   | Type      | `(deps) => Record<string, readonly unknown[]>`. Internal type for dynamic slot functions.     |
+| `SlotFilter`                                           | Type      | `(slots, deps) => slots`. Internal type for the global slot filter.                           |
 
 ### @react-router-modules/testing
 

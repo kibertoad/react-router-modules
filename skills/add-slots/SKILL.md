@@ -166,9 +166,17 @@ export default defineModule<AppDependencies, AppSlots>({
 
   // Dynamic — re-evaluated on recalculateSlots()
   dynamicSlots: (deps) => ({
-    commands: deps.auth.user?.role === "admin"
-      ? [{ id: "billing:void-invoice", label: "Void Invoice", group: "actions", onSelect: () => {} }]
-      : [],
+    commands:
+      deps.auth.user?.role === "admin"
+        ? [
+            {
+              id: "billing:void-invoice",
+              label: "Void Invoice",
+              group: "actions",
+              onSelect: () => {},
+            },
+          ]
+        : [],
   }),
 
   requires: ["auth"],
