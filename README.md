@@ -2,6 +2,11 @@
 
 Plug-and-play modular framework for React. Build frontend features as independent npm packages, compose them into a running application via a typed module registry.
 
+## Deprecation notice
+
+Repo merged with https://github.com/kibertoad/modular-react
+
+
 **Stack:** React 19 (React Compiler) + React Router v7 + Vite 8 + Zustand
 
 ## Table of Contents
